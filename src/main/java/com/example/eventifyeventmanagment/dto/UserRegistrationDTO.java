@@ -13,6 +13,12 @@ public class UserRegistrationDTO {
     private String password;
     private  boolean isOrganizer;
 
+    public UserRegistrationDTO(String name, String email, String password) {
+        this.name = name;
+        this.email = email;
+        this.password = password;
+    }
+
 //    public UserRegistrationDTO(String abc, String xyz) {
 //        this.name = abc;
 //        this.email = xyz;

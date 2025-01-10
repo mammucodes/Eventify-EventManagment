@@ -20,6 +20,9 @@ public class UserService {
     @Autowired
     private UserRepository userRepository;
 
+    //This method takes userrequest  object and
+    // if user is not  already present in database it saves the user
+    // or else if already exist it throws Duplication EmailException
      public User registerUser(UserRegistrationDTO  registrationDto) throws DuplicateEmailException {
          logger.info("Attempting to register a new user with username: {}", registrationDto.getName());
 
@@ -46,7 +49,8 @@ public class UserService {
          return savedUser;
      }
 
-
+// This method takes user id and checks if present  returns user object
+    // if not it throws user not found excepton
     public User getUserDetails(int id) throws UserNotFoundException {
          logger.info("attempting to get user details by using user id");
        Optional< User>  optionaluser =  userRepository.findById((long) id);

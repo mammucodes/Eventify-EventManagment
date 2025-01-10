@@ -36,7 +36,7 @@ public class UserController {
             er.setMessage("Name should not be null or empty");
             er.setErrorCode("404");
             return ResponseEntity.badRequest().body(er);
-        }
+       }
         if (userregister.getName().length() < 3 || userregister.getName().length() > 100) {
             logger.error("Validation failed: Username length is invalid");
             return ResponseEntity.badRequest().body(new ErrorResponse("Username must be between 3 and 20 characters", "400"));

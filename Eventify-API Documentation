@@ -1,0 +1,136 @@
+Restful apis for application
+
+1.
+Create User
+----------
+ api: POST /apiuser/create
+request
+{
+"name":"raaj"
+""email":"naag@gmil.com"
+password":"Abc@123"
+"isOrganizer": false
+}
+
+response
+"id"123,
+"message: "sucessfully registered"
+
+if fails response :
+{
+"message" "Failed to register user",
+"Error Code":"400",
+ "timestamp": "2025-01-08T16:03:39.5803131"
+ 
+ -------------get user details------------
+ api:GET/api/user/{user_idid}
+request:{
+"user_id":123
+"jwt token": "1235tg"
+}
+response{
+"id": 2,
+    "name": "mammu",
+    "email": "mammu22j@gmail.com",
+    "accountDays": 757,
+    "register_on": "2022-12-12T00:00:00",
+    "organizer": false
+}
+
+-------------------Event Apis-------------
+ 
+ 
+------create event-------------
+api: POST/api/events/create
+request
+
+{
+"name":"Bollywood retro",
+"performer":"rakhi ",
+"eventstarttime":"2025-02-12T16:22:45Z",
+"eventendtime":"2025-02-16T19:23:45Z",
+"category":"dancing",
+"city":"Dallas"
+}
+response {
+ "message": "succesfully created an event with event id15",
+    "id": 15,
+    "name": "Bollywood retro"
+}
+if already exist  response will be 
+{
+
+  "message": "There is already event present woith same perfrmer at same time cannot create another event",
+    "errorCode": "400",
+    "timestamp": "2025-01-09T10:41:02.2726294"
+}
+
+----------------Get Event Details_----------
+api: GET/api/events/dallas
+request:
+{
+"name":"Bolly",
+"performer":"r",
+"category":"sing",
+"eventStartDate": "2025-02-12 "
+   }   
+
+
+response:[
+ {
+        "name": "Bollywood retro",
+        "performer": "rakhi ",
+        "category": "dancing",
+        "city": "Dallas",
+        "eventStartTime": "2025-02-12T16:23:45.000+00:00",
+        "eventEndTIme": "2025-02-16T19:23:45.000+00:00"
+    },
+    {
+        "name": "Bollywood retro",
+        "performer": "rakhi ",
+        "category": "dancing",
+        "city": "Dallas",
+        "eventStartTime": "2025-02-12T16:23:45.000+00:00",
+        "eventEndTIme": "2025-02-16T19:23:45.000+00:00"
+    }],
+	1 more example
+	request:
+	{
+"name":"Tolly",
+"performer":"r",
+"category":"sing"
+
+   }  
+response:[
+
+    {
+        "name": "Tollywood nights",
+        "performer": "karthik ",
+        "category": "singing",
+        "city": "Dallas",
+        "eventStartTime": "2025-01-15T16:23:45.000+00:00",
+        "eventEndTIme": "2025-01-15T19:23:45.000+00:00"
+    }
+]
+}   
+---------------------------update Event--------------
+api POST /api/events/update/{eventId}
+request: json
+{
+    "city":"plano", 
+    "performer":"rahul splingli,malavika"
+}
+response:
+"id": 15,
+    "name": "Bollywood retro",
+    "performer": "rahul splingli,malavika",
+    "city": "plano",
+    "category": "dancing",
+    "eventStartTime": "2025-02-12T16:22:45.000+00:00",
+    "eventEndTIme": "2025-02-16T19:23:45.000+00:00",
+    "description": null
+}
+
+
+{
+}
