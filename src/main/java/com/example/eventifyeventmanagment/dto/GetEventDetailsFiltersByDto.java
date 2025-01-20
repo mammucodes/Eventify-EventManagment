@@ -15,5 +15,7 @@ public class GetEventDetailsFiltersByDto {
     private String category;
     private  String city;
     private LocalDate eventStartDate;
+    private String status;
+   // private int status_id; //todo  need to change this to  String status user will give  as "avaialbel/completed
 
 }

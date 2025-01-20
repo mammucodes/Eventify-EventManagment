@@ -19,7 +19,7 @@ public class UserServiceTest {
     void shouldRegisterUserSuccessfully() throws DuplicateEmailException {
         // Arrange
         UserRegistrationDTO registrationDto = new UserRegistrationDTO("John", "john@example.com", "password123");
-         UserService userService = new UserService();
+        UserService userService = new UserService();
         // Act
         User savedUser = userService.registerUser(registrationDto);
 
@@ -44,7 +44,7 @@ public class UserServiceTest {
         existingUser.setEmail("john@example.com");
         existingUser.setPassword("password123");
         existingUser.setRegisteredOn(LocalDateTime.now());
-      //  userRepository.save(existingUser);
+        //  userRepository.save(existingUser);
 
         UserRegistrationDTO registrationDto = new UserRegistrationDTO("Jane", "john@example.com", "password456");
 
@@ -71,8 +71,8 @@ public class UserServiceTest {
         Assertions.assertTrue(savedUser.getRegisteredOn().isBefore(LocalDateTime.now().plusSeconds(1)));
 
         // Verify user is saved in the database
-       // Optional<User> retrievedUser = userRepository.findById(savedUser.getId());
-      //  Assertions.assertTrue(retrievedUser.isPresent());
-      //  Assertions.assertNotNull(retrievedUser.get().getRegisteredOn());
+        // Optional<User> retrievedUser = userRepository.findById(savedUser.getId());
+        //  Assertions.assertTrue(retrievedUser.isPresent());
+        //  Assertions.assertNotNull(retrievedUser.get().getRegisteredOn());
     }
 }

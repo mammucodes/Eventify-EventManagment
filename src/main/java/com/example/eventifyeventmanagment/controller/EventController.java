@@ -1,37 +1,192 @@
 package com.example.eventifyeventmanagment.controller;
 
-import com.example.eventifyeventmanagment.Exceptions.EventNotFoundException;
+import com.example.eventifyeventmanagment.Exceptions.*;
 import com.example.eventifyeventmanagment.dto.*;
 //import com.example.eventifyeventmanagment.dto.EventDTO;
 //import com.example.eventifyeventmanagment.dto.EventResponse;
 import com.example.eventifyeventmanagment.entity.Event;
-import com.example.eventifyeventmanagment.entity.User;
+import com.example.eventifyeventmanagment.entity.EventTicketsDetails;
 import com.example.eventifyeventmanagment.repository.EventRepository;
 import com.example.eventifyeventmanagment.service.EventService;
-import org.apache.coyote.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.sql.Timestamp;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("api/events")
 public class EventController {
-    @Autowired
+
     private EventService eventservice;
     Logger logger = LoggerFactory.getLogger(EventController.class);
+
     @Autowired
-    private EventRepository eventrepository;
+    public EventController(EventService eventservice, EventRepository eventrepository) {
+
+        this.eventservice = eventservice;
+
+
+    }
 
     @PostMapping("/create")
-    public ResponseEntity<?> createEvent(@RequestBody CreateEventRequestDTO eventrequestdto) {
+    public ResponseEntity<?> createEvent(@RequestBody CreateEventRequestDTO eventrequestdto) throws InvalidStatusOption {
+
+        ResponseEntity<ErrorResponse> badRequest = validateCreateEventDTO(eventrequestdto);
+        if (badRequest != null)
+            return badRequest;
+
+        // Proceed with event creation  if all validations pass
+        try {
+            CreateEventResponse responsedto = new CreateEventResponse();
+            eventservice.createEventWithResponse(eventrequestdto, responsedto);
+
+            return ResponseEntity.ok().body(responsedto);
+        } catch (UserNotFoundException ue) {
+            return ResponseEntity.badRequest().body(new ErrorResponse("no user with given organiser id is present in our system", "400"));
+        } catch (UserFoundIsNotOrganizerException eo) {
+            return ResponseEntity.badRequest().body(new ErrorResponse("Passed user is not an organiser . so  cannot create an event", "400"));
+        } catch (EventOverLapException eo) {
+            return ResponseEntity.badRequest().body(new ErrorResponse(eo.getMessage(), eo.getCode()));
+        }
+    }
+
+    @GetMapping("/{city}")
+    public ResponseEntity<?> getEventDetails(
+            @PathVariable String city,
+            @RequestBody(required = false) GetEventDetailsFiltersByDto geteventrequest
+    ) throws InvalidStatusOption {
+        List<Event> events;
+
+        if (city == null || city.isEmpty()) {
+            return ResponseEntity.badRequest().body(new ErrorResponse("City name cannot be null or empty", "400"));
+        }
+        events = eventservice.getEventDetails(city, geteventrequest);
+        if (events == null || events.isEmpty()) {
+            return ResponseEntity.badRequest().body(new ErrorResponse("No    events in the given city as of now", "400"));
+        }
+
+        List<EventDetailsResponse> geteventsList = new ArrayList<>();
+
+        for (Event event : events) {
+            EventDetailsResponse response = new EventDetailsResponse();
+            response.setName(event.getName());
+            response.setPerformer(event.getPerformer());
+            response.setCity(event.getCity());
+            response.setEventStartTime(event.getEventStartTime());
+            response.setEventEndTIme(event.getEventEndTime());
+            response.setCategory(event.getCategory());
+            geteventsList.add(response);
+        }
+
+        return ResponseEntity.ok().body(geteventsList);
+    }
+
+    // return  ResponseEntity.badRequest().body(new ErrorResponse("event is null or empty exception ","400"));
+
+
+    @PostMapping("/update/{id}")
+    public ResponseEntity<?> updateEventDetails(@PathVariable int id,
+
+                                                @RequestBody(required = false) UpdateEventRequestDTO updaterequest) throws EventNotFoundException {
+        if (updaterequest == null) {
+            return ResponseEntity.badRequest().body(new ErrorResponse("  event  null is passed", "400"));
+        }
+        Event event;
+
+        event = eventservice.updateEventDetails(id, updaterequest);
+        //catching if any exception occurs in GlobalHandlerException if Event id is not foumd
+        return ResponseEntity.ok().body(event);
+
+
+    }
+
+    // To Do need to generate oraganiserId from JWt token
+    //Request param is also known as Query Param
+    @PutMapping("/cancel/{eventId}")
+    public ResponseEntity<?> deleteAnEvent(@PathVariable int eventId,
+                                           @RequestHeader Integer organizerId) {
+
+        if (eventId == 0||organizerId==null||organizerId==0) {
+
+            return ResponseEntity.badRequest().body(new ErrorResponse("id cannot be zero or null", "400"));
+        }
+
+
+        //need to generate user id through jwt token
+        try {
+            eventservice.cancelAnEvent(eventId, organizerId);
+            return ResponseEntity.ok().body("Succesffully cancelled the event");
+        } catch (EventNotFoundException ex) {
+            return ResponseEntity.badRequest().body(new ErrorResponse("Event with given id is not present", "400"));
+        } catch (EventWithGivenOrganizerIsNotPresentException eo) {
+            return ResponseEntity.badRequest().body(new ErrorResponse("No  matching event with given organiserId is present", "400"));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(new ErrorResponse("Exception from Internal Server side or unKnown Exception", "500"));
+        }
+
+    }
+@PutMapping("/updatetickets/{eventId}")
+    public ResponseEntity<?> updateEventTicketDetails(@PathVariable Integer eventId,
+            @RequestBody UpdateEventTicketsRequestDTO updateEventTicketsRequestDTO) throws EventTicketsPerUserPassedZeroException, EventNotFoundException, EventTicketsOrTicketsPriceNotFoundException, UserFoundIsNotOrganizerException {
+        ResponseEntity<ErrorResponse> badRequest = validateUpdateEventTicketDetails(eventId,updateEventTicketsRequestDTO);
+        if (badRequest != null)
+            return badRequest;
+        EventTicketsDetails eventTicketDetails = eventservice.UpdateEventTicketDetails(eventId,updateEventTicketsRequestDTO);
+
+        UpdateEventTicketResponse updateEventTicketResponse = new UpdateEventTicketResponse();
+        updateEventTicketResponse.setMessage("sucessfully updated event tickets details");
+
+        updateEventTicketResponse.setEventId(eventTicketDetails.getEventId());
+        updateEventTicketResponse.setTotalTickets(eventTicketDetails.getAvailableTickets());
+        updateEventTicketResponse.setNewTicketPrice(eventTicketDetails.getTicketPrice());
+        updateEventTicketResponse.setMaxTicketsPerUser(eventTicketDetails.getMaxTicektsCanBook());
+        return ResponseEntity.ok(updateEventTicketResponse);
+
+    }
+
+    public ResponseEntity<ErrorResponse> validateUpdateEventTicketDetails(Integer eventId, UpdateEventTicketsRequestDTO updateEventTicketsRequestDTO) {
+        if (updateEventTicketsRequestDTO == null) {
+            logger.info("null updateEventTicketsRequestDTO object is passed");
+            return ResponseEntity.badRequest().body(new ErrorResponse("cannot pass null null updateEventTicketsRequestDTO ", "400"));
+        }
+        if (eventId == null || eventId<= 0) {
+            logger.info("eventId cannot be null or zero or negative number");
+            return ResponseEntity.badRequest().body(new ErrorResponse("eventId cannot be null  or less than or equal to 0to update ticekts details we neeed eventId", "400"));
+        }
+        if (updateEventTicketsRequestDTO.getOrganizerId() == null || updateEventTicketsRequestDTO.getOrganizerId() <= 0) {
+            logger.info("organizerId cannot be null or negative number");
+            return ResponseEntity.badRequest().body(new ErrorResponse("organizerId cannot be null or less than or equal to 0 to update ticekt details", "400"));
+        }
+        if(updateEventTicketsRequestDTO.getNewTicketPrice() != null) {
+            if (updateEventTicketsRequestDTO.getNewTicketPrice() < 0) {
+
+                logger.info("ticekt price or count or maxticekts to be booked cannot be less than 0");
+                return ResponseEntity.badRequest().body(new ErrorResponse("ticketprice or ticektcount or maxticekts allowed  values cannot be less than 0", "400"));
+            }
+        }
+
+            if (updateEventTicketsRequestDTO.getNewTicketsAdded() == null ||  updateEventTicketsRequestDTO.getNewTicketsAdded() <= 0) {
+
+                logger.info("ticekt price or count or maxticekts to be booked cannot be less than 0");
+                return ResponseEntity.badRequest().body(new ErrorResponse("ticketprice or ticektcount or maxticekts allowed  values cannot be less than 0", "400"));
+            }
+
+        if(updateEventTicketsRequestDTO.getMaxTicketsPerUser() != null) {
+            if (updateEventTicketsRequestDTO.getMaxTicketsPerUser() <= 0) {
+
+                logger.info("ticekt price or count or maxticekts to be booked cannot be less than 0");
+                return ResponseEntity.badRequest().body(new ErrorResponse("ticketprice or ticektcount or maxticekts allowed  values cannot be less than 0", "400"));
+            }
+        }
+        return null;
+    }
+
+
+    private ResponseEntity<ErrorResponse> validateCreateEventDTO(CreateEventRequestDTO eventrequestdto) {
 
         if (eventrequestdto.getName() == null || eventrequestdto.getName().trim().isEmpty()) {
             logger.info("Empty or null event name is passed");
@@ -59,7 +214,7 @@ public class EventController {
         }
         if (eventrequestdto.getCategory() == null || eventrequestdto.getCategory().trim().isEmpty()) {
             logger.info("Empty or null cateogry name is passed");
-            return ResponseEntity.badRequest().body(new ErrorResponse("performer name cannot be null or empty", "400"));
+            return ResponseEntity.badRequest().body(new ErrorResponse("category name cannot be null or empty", "400"));
         }
         if (eventrequestdto.getCategory().length() < 2 || eventrequestdto.getCategory().length() > 100) {
             logger.info("Validation failed:category  charcters are less than 2 or  more  than 100  passed");
@@ -73,78 +228,13 @@ public class EventController {
             logger.info("null end time  is passed");
             return ResponseEntity.badRequest().body(new ErrorResponse("eventendtime  cannot be null", "400"));
         }
-        List<Event> events = eventrepository.findByPerformerAndEventStartTime(eventrequestdto.getPerformer(), eventrequestdto.getEventstarttime());
 
-        if (!events.isEmpty()) {
-            logger.info("THis eperformer is already doing an event ");
-            return ResponseEntity.badRequest().body(new ErrorResponse("There is already event present woith same perfrmer at same time cannot create another event", "400"));
-
+        if ((eventrequestdto.getEventTicketDetails().getTicketPrice() < 0) || (eventrequestdto.getEventTicketDetails().getAvailableTickets() < 0) || (eventrequestdto.getEventTicketDetails().getMaxTicketsCanBook() < 0)) {
+            logger.info("ticekt pric or count or maxticekts to be booked cannot be less than 0");
+            return ResponseEntity.badRequest().body(new ErrorResponse("ticket object values cannot be less than 0", "400"));
         }
-        // Proceed with eventcreation  if all validations pass
-        Event event = eventservice.createEvent(eventrequestdto);
-        CreateEventResponse responsedto = new CreateEventResponse();
-
-        responsedto.setId(Math.toIntExact(event.getId()));
-        responsedto.setName(event.getName());
-        responsedto.setMessage("succesfully created an event with event id" + responsedto.getId());
-        return ResponseEntity.ok().body(responsedto);
-
+        return null;
     }
-
-
-    @GetMapping("/{city}")
-    public ResponseEntity<?> getEventDetails(
-            @PathVariable String city,
-            @RequestBody(required = false) GetEventDetailsFiltersByDto geteventrequest
-           ) {
-        List<Event> events;
-
-        if (city == null || city.isEmpty()) {
-            return ResponseEntity.badRequest().body(new ErrorResponse("City name cannot be null or empty", "400"));
-        }
-        events = eventservice.getEventDetails(city, geteventrequest);
-        if(events==null||events.isEmpty()){
-            return ResponseEntity.badRequest().body(new ErrorResponse("No    events in the given city as of now","400"));
-        }
-
-        List<EventDetailsResponse> geteventsList = new ArrayList<>();
-
-        for (Event event : events) {
-            EventDetailsResponse response = new EventDetailsResponse();
-            response.setName(event.getName());
-            response.setPerformer(event.getPerformer());
-            response.setCity(event.getCity());
-            response.setEventStartTime(event.getEventStartTime());
-            response.setEventEndTIme(event.getEventEndTIme());
-            response.setCategory(event.getCategory());
-            geteventsList.add(response);
-        }
-
-        return ResponseEntity.ok().body(geteventsList);
-    }
-
-    // return  ResponseEntity.badRequest().body(new ErrorResponse("event is null or empty exception ","400"));
-
-
-    @PostMapping("/update/{id}")
-    public ResponseEntity<?> updateEventDetails(@PathVariable int id,
-
-                                                @RequestBody(required = false) UpdateEventRequestDTO updaterequest) {
-        if (updaterequest == null) {
-            return ResponseEntity.badRequest().body(new ErrorResponse("  event  null is passed", "400"));
-        }
-        Event event;
-        try {
-          event  = eventservice.updateEventDetails(id, updaterequest);
-            return ResponseEntity.ok().body(event);
-        }catch(EventNotFoundException ev){
-            return ResponseEntity.badRequest().body(new ErrorResponse("Event is not present with id","400") );
-        }
-
-
-
-    }
-
 }
 
 

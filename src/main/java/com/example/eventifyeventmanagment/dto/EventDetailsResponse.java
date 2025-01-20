@@ -13,5 +13,8 @@ public class EventDetailsResponse {
     private  String city;
     private Timestamp eventStartTime;
     private Timestamp eventEndTIme;
+    private String Description;
+    private Integer organizerId;
+    private Integer status_id;
 
 }

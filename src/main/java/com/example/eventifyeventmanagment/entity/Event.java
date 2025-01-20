@@ -24,9 +24,15 @@ public class Event {
     @Column(name = "event_start_time", nullable = false,length = 100)
     private Timestamp eventStartTime; //eventStartTime
     @Column(name = "event_end_time",nullable = false, length = 100)
-    private Timestamp eventEndTIme ;
+    private Timestamp eventEndTime ;
     @Column(length = 100)
     private String description;
+    @Column(length = 100)
+    private String descrption;
+    @Column(name="organizer_id")
+    private Integer  organizerId ;
+    @Column(name = "status_id",nullable = false)
+    private Integer statusId;
 
 
 

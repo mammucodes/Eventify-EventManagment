@@ -21,14 +21,18 @@ import java.time.LocalDate;
 import java.time.Period;
 
 @RestController
-@RequestMapping("api/user")
+@RequestMapping("api/users")
 public class UserController {
     Logger logger = LoggerFactory.getLogger(UserController.class);
-    @Autowired
+
     private UserService userservice;
+    @Autowired
+    public  UserController(UserService userservice){
+        this.userservice = userservice;
+    }
 
     @PostMapping("/register")
-    public ResponseEntity<?> registerUser(@RequestBody UserRegistrationDTO userregister)  {
+    public ResponseEntity<?> registerUser(@RequestBody UserRegistrationDTO userregister) {
 
         if (userregister.getName() == null || userregister.getName().trim().isEmpty()) {
 
@@ -36,7 +40,7 @@ public class UserController {
             er.setMessage("Name should not be null or empty");
             er.setErrorCode("404");
             return ResponseEntity.badRequest().body(er);
-       }
+        }
         if (userregister.getName().length() < 3 || userregister.getName().length() > 100) {
             logger.error("Validation failed: Username length is invalid");
             return ResponseEntity.badRequest().body(new ErrorResponse("Username must be between 3 and 20 characters", "400"));
@@ -70,10 +74,9 @@ public class UserController {
         // Proceed with user registration if all validations pass
         User registeredUser;
         try {
-            registeredUser  = userservice.registerUser(userregister);
-        }
-        catch(DuplicateEmailException dex){
-            return ResponseEntity.badRequest().body(new ErrorResponse("This email already  exist try to give new email","400"));
+            registeredUser = userservice.registerUser(userregister);
+        } catch (DuplicateEmailException dex) {
+            return ResponseEntity.badRequest().body(new ErrorResponse("This email already  exist try to give new email", "400"));
         }
 
         logger.info("User registered successfully with ID: {}", registeredUser.getId());
@@ -87,19 +90,19 @@ public class UserController {
 
         //todo only proceed to next lines of code if authenticated else throw 401 error
         User user = null;
-try {
-     user = userservice.getUserDetails(id);
-}catch(UserNotFoundException se){
-    ResponseEntity.badRequest().body(new ErrorResponse("no such user found with given ID"+id+" "," 400 "));
-}
+        try {
+            user = userservice.getUserDetails(id);
+        } catch (UserNotFoundException se) {
+            ResponseEntity.badRequest().body(new ErrorResponse("no such user found with given ID" + id + " ", " 400 "));
+        }
 
-UserDetailsResponse response = new UserDetailsResponse();
+        UserDetailsResponse response = new UserDetailsResponse();
         assert user != null;
         response.setName(user.getName());
-      response.setEmail(user.getEmail());
-       response.setId(Math.toIntExact(user.getId()));
-       response.setOrganizer(user.isIsorganizer());
-       response.setRegister_on(user.getRegisteredOn());
+        response.setEmail(user.getEmail());
+        response.setId(Math.toIntExact(user.getId()));
+        response.setOrganizer(user.isIsorganizer());
+        response.setRegister_on(user.getRegisteredOn());
         LocalDate currentDate = LocalDate.now();
 
         // Calculate the difference
@@ -112,9 +115,6 @@ UserDetailsResponse response = new UserDetailsResponse();
 
 
     }
-
-
-
 
 
     private boolean isValid(String email) {
