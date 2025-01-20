@@ -1,7 +1,7 @@
 package com.example.eventifyeventmanagment.controller;
 
 import com.example.eventifyeventmanagment.Exceptions.*;
-import com.example.eventifyeventmanagment.dto.BookEventTicketRequestDTO;
+import com.example.eventifyeventmanagment.dto.request.BookEventTicketRequestDTO;
 import com.example.eventifyeventmanagment.dto.BookEventTicketResponse;
 import com.example.eventifyeventmanagment.dto.ErrorResponse;
 import com.example.eventifyeventmanagment.dto.UserTicketResponseDTO;
@@ -32,18 +32,18 @@ public class TicketController {
         BookEventTicketResponse ticketResponse = new BookEventTicketResponse();
         ticketResponse.setTicketId(bookedTicketDetails.getId());
         ticketResponse.setMessage("Sucessfully booked tickets ");
+        ticketResponse.setBookedOn(bookedTicketDetails.getTicketBookedOn());
         return ResponseEntity.ok(ticketResponse);
 
     }
 
-    // todo implement this later
     @GetMapping("/get/{ticketId}")
-    public ResponseEntity<?> getEventTicketDetails(@PathVariable Integer ticketId) throws UserBookedTicketDetailsNotFounException {
-        if(ticketId==null||ticketId<0){
-            return ResponseEntity.badRequest().body(new ErrorResponse("passed ticket id is not found in booked ticket details","400"));
+    public ResponseEntity<?> getEventTicketDetails(@PathVariable Integer ticketId) throws UserBookedTicketDetailsNotFounException, InvalidStatusOption {
+        if (ticketId == null || ticketId < 0) {
+            return ResponseEntity.badRequest().body(new ErrorResponse("passed ticket id is not found in booked ticket details", "400"));
         }
 
-        UserTicketResponseDTO ticketResponseDTO =   ticketService.getEventTicketDetails(ticketId);
+        UserTicketResponseDTO ticketResponseDTO = ticketService.getEventTicketDetails(ticketId);
         System.out.println("WAITING.....");
         try {
             Thread.sleep(2 * 1000);

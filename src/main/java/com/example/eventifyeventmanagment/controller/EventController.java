@@ -4,6 +4,7 @@ import com.example.eventifyeventmanagment.Exceptions.*;
 import com.example.eventifyeventmanagment.dto.*;
 //import com.example.eventifyeventmanagment.dto.EventDTO;
 //import com.example.eventifyeventmanagment.dto.EventResponse;
+import com.example.eventifyeventmanagment.dto.request.CreateEventRequestDTO;
 import com.example.eventifyeventmanagment.entity.Event;
 import com.example.eventifyeventmanagment.entity.EventTicketsDetails;
 import com.example.eventifyeventmanagment.repository.EventRepository;

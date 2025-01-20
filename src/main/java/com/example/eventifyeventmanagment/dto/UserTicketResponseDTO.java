@@ -14,7 +14,7 @@ public class UserTicketResponseDTO {
     private Integer ticketId;
     private Integer seatsBooked;
     private Integer checkInCount;
-    private Event event;
-    private User user;
+    private EventDetailsResponse event;
+    private UserDetailsResponse user;
     private LocalDateTime ticketBookedTime;
 }

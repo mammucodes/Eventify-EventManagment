@@ -1,12 +1,15 @@
 package com.example.eventifyeventmanagment.service;
 
 import com.example.eventifyeventmanagment.Exceptions.*;
-import com.example.eventifyeventmanagment.dto.BookEventTicketRequestDTO;
+import com.example.eventifyeventmanagment.dto.EventDetailsResponse;
+import com.example.eventifyeventmanagment.dto.UserDetailsResponse;
+import com.example.eventifyeventmanagment.dto.request.BookEventTicketRequestDTO;
 import com.example.eventifyeventmanagment.dto.UserTicketResponseDTO;
 import com.example.eventifyeventmanagment.entity.Event;
 import com.example.eventifyeventmanagment.entity.EventTicketsDetails;
 import com.example.eventifyeventmanagment.entity.User;
 import com.example.eventifyeventmanagment.entity.UserTicket;
+import com.example.eventifyeventmanagment.loaders.EventStatusStaticLoader;
 import com.example.eventifyeventmanagment.repository.EventRepository;
 import com.example.eventifyeventmanagment.repository.EventTicketRepository;
 import com.example.eventifyeventmanagment.repository.UserBookedTicketRepository;
@@ -16,24 +19,33 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.Period;
 import java.util.Optional;
 
 @Service
 public class TicketService {
     Logger logger = LoggerFactory.getLogger(UserService.class);
     private EventRepository eventRepository;
-    private EventTicketRepository eventTicketRepository;
-    private UserBookedTicketRepository bookedTicketRepository;
-    private UserRepository userRepository;
+    private final EventTicketRepository eventTicketRepository;
+    private final UserBookedTicketRepository bookedTicketRepository;
+    private final UserRepository userRepository;
+    private final EventStatusStaticLoader staticLoader;
+
 
     @Autowired
-    public TicketService(EventRepository eventRepository, EventTicketRepository eventTicketRepository, UserBookedTicketRepository bookedTicketRepository, UserRepository userRepository) {
+    public TicketService(EventRepository eventRepository,
+                         EventTicketRepository eventTicketRepository,
+                         UserBookedTicketRepository bookedTicketRepository,
+                         UserRepository userRepository,
+                         EventStatusStaticLoader staticLoader) {
 
         this.eventRepository = eventRepository;
         this.eventTicketRepository = eventTicketRepository;
         this.bookedTicketRepository = bookedTicketRepository;
         this.userRepository = userRepository;
-
+        this.staticLoader = staticLoader;
     }
 
     //todo we can check if event or event tickets detaild or user details   present in data base parallely by using threads . do it later
@@ -88,18 +100,29 @@ public class TicketService {
         } else {
             throw new UserNotFoundException("passed user id is not present in db " + bookEventTicketRequestDTO.getUserId());
         }
+
         userTicketDetails.setUser(user);
         userTicketDetails.setSeatsBooked(bookEventTicketRequestDTO.getNoOfSeats());
         userTicketDetails.setCheckInCount(0);
+        userTicketDetails.setTicketBookedOn(LocalDateTime.now());
+
         UserTicket userTicket = bookedTicketRepository.save(userTicketDetails);
+        logger.info("sucessfully saved user ticket details to database");
+
         Integer newAvailableTickets = totalAvailableTickets - passedNoOfTicketsToBook;
+        logger.info("trying to set reamining avaible tickets in database");
+
         eventTicketsDetails.setAvailableTickets(newAvailableTickets);
+        logger.info("set reamining avaible tickets in database");
+        // eventTicketsDetails.setTicketBookedOn(LocalDateTime.now());
+
         eventTicketRepository.save(eventTicketsDetails);
+        logger.info("succesfully saved update ticket count in event ticket details");
         return userTicket;
     }
 
 
-    public UserTicketResponseDTO getEventTicketDetails(Integer ticketId) throws UserBookedTicketDetailsNotFounException {
+    public UserTicketResponseDTO getEventTicketDetails(Integer ticketId) throws UserBookedTicketDetailsNotFounException, InvalidStatusOption {
         Optional<UserTicket> optionalUserTicket = bookedTicketRepository.findById(ticketId);
 
         if (optionalUserTicket.isPresent()) {
@@ -109,9 +132,45 @@ public class TicketService {
             UserTicketResponseDTO userTicketResponse = new UserTicketResponseDTO();
             userTicketResponse.setTicketId(userTicket.getId());
             userTicketResponse.setSeatsBooked(userTicket.getSeatsBooked());
-            userTicketResponse.setEvent(userTicket.getEvent());
-            userTicketResponse.setUser(userTicket.getUser());
+            userTicketResponse.setTicketBookedTime(userTicket.getTicketBookedOn());
+
+
+            EventDetailsResponse event = new EventDetailsResponse();
+            event.setName(userTicket.getEvent().getName());
+            event.setCity(userTicket.getEvent().getCity());
+            event.setPerformer(userTicket.getEvent().getPerformer());
+            event.setEventStartTime(userTicket.getEvent().getEventStartTime());
+            event.setEventEndTIme(userTicket.getEvent().getEventEndTime());
+            event.setCategory(userTicket.getEvent().getCategory());
+            event.setOrganizerId(userTicket.getEvent().getOrganizerId());
+
+            Integer statusId = userTicket.getEvent().getStatusId();
+            if (statusId == null || statusId <= 0) {
+                throw new InvalidStatusOption("invalid statusoption is passed", 400);
+            }
+
+            String statusName = staticLoader.getStatusNameByUsingStatusId(statusId);
+            event.setStatus(statusName);
+
+
+            userTicketResponse.setEvent(event);
+
+            UserDetailsResponse user = new UserDetailsResponse();
+            user.setId(userTicket.getUser().getId().intValue());
+            user.setName(userTicket.getUser().getName());
+            user.setEmail(userTicket.getUser().getEmail());
+            user.setRegister_on(userTicket.getUser().getRegisteredOn());
+
+            // Calculate the difference
+            //to store account active days
+            LocalDate currentDate = LocalDate.now();
+            Period period = Period.between(LocalDate.from(userTicket.getUser().getRegisteredOn()), currentDate);
+            int AccountdaysActive = period.getYears() * 365 + period.getMonths() * 30 + period.getDays(); // Approximate calculation
+
+            user.setAccountDays((long) AccountdaysActive);
+            userTicketResponse.setUser(user);
             userTicketResponse.setCheckInCount(userTicket.getCheckInCount());
+
             logger.info("set all the data to ticketresponse object");
             return userTicketResponse;
         } else {

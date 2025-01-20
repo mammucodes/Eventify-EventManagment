@@ -7,13 +7,13 @@ import java.time.LocalDateTime;
 
 @Entity
 @Data
-@Table(name = "user_booked_tickets_details")//todo change table name
+@Table(name = "user_tickets_details")
 public class UserTicket {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(name = "tickets_booked", nullable = false) // todo change table name in DB
+    @Column(name = "seats_booked", nullable = false)
     private Integer seatsBooked;
     @Column(name = "count")
     private Integer checkInCount;
@@ -25,7 +25,8 @@ public class UserTicket {
     @ManyToOne
     @JoinColumn(name = "user_id", referencedColumnName = "id")
     private User user;
-    private LocalDateTime ticketBookedTime; // todo in generate localtime when saving in ticketrepository and add column in table
+    @Column(name = "ticket_booked_time", nullable = false)
+    private LocalDateTime ticketBookedOn;
 
 
 }
