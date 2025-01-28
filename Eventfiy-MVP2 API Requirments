@@ -1,0 +1,244 @@
+MVP-2 API Requirment 
+
+In User Presceptive
+
+
+------create event by organizer-------------
+api: POST /api/events/create
+request
+
+{
+    "name": "Bollywood Nights",
+    "performer": "Nagaraj ",
+    "eventstarttime": "2025-03-12T10:19:45Z",
+    "eventendtime": "2025-03-12T13:04:45Z",
+    "category": "singing",
+    "city": "Dallas",
+    "organizerId": 5,
+   "statusId": 1,
+  "eventTicketDetails": {
+        "availableTickets": 20,
+        "ticketPrice": 50,
+        "maxTicketsCanBook": 1
+    }
+}
+response:{
+ "id": 29,
+    "name": "Bollywood Nights",
+    "performer": "Nagaraj ",
+    "category": "singing",
+    "city": "Dallas",
+    "eventstarttime": "2025-03-12T10:19:45.000+00:00",
+    "eventendtime": "2025-03-12T13:04:45.000+00:00",
+    "description": null,
+    "organizerId": 5,
+    "statusId": 1,
+    "eventTicketResponse": {
+        "id": 4,
+        "availableTickets": 20,
+        "ticketPrice": 50,
+        "maxTicektsCanBook": 1
+}
+
+response {
+ "message": "succesfully created an event with event id 15",
+    "id": 15,
+    "name": "Bollywood retro"
+}
+
+ -----------------GET EventDetails---------------
+api: GET/api/events/{city}
+
+request:{
+city = "dallas"
+}
+
+response:
+[
+{
+ "name": "Bollywood retro",
+        "performer": "rakhi ",
+        "category": "dancing",
+        "city": "Dallas",
+        "eventStartTime": "2025-02-12T16:23:45.000+00:00",
+        "eventEndTIme": "2025-02-16T19:23:45.000+00:00",
+		organiser_id:123
+		  "description": null,
+		  "statusId":1
+		  
+		  "Ticekts":{
+		  "availableTicekts":20,
+		  "ticektPrice":50,
+		 " maxTicektsPerUser":1
+		  
+		  
+		  }
+
+    },
+    {
+        "name": "Bollywood retro",
+        "performer": "rakhi ",
+        "category": "dancing",
+        "city": "Dallas",
+        "eventStartTime": "2025-02-12T16:23:45.000+00:00",
+        "eventEndTIme": "2025-02-16T19:23:45.000+00:00",
+		  "description": null,
+		  organiser_Id":5
+		   "Tickets":{
+		  "availableTicekts":20,
+		  "ticektPrice":50,
+		  "maxTicektsPerUser":1,
+		  
+		  }
+
+    }
+]
+request:
+{
+"name":"Bolly",
+"performer":"rakhi",
+"category":"dancing",
+"status":"available"
+
+
+   } 
+response:
+[
+{
+        "name": "Bollywood retro",
+        "performer": "rakhi ",
+        "category": "dancing",
+        "city": "Dallas",
+        "eventStartTime": "2025-02-12T16:23:45.000+00:00",
+        "eventEndTIme": "2025-02-16T19:23:45.000+00:00",
+        "organizerId": null,
+        "status_id": null,
+        "description": null
+    },
+    {
+        "name": "Bollywood retro",
+        "performer": "rakhi ",
+        "category": "dancing",
+        "city": "Dallas",
+        "eventStartTime": "2025-02-12T16:23:45.000+00:00",
+        "eventEndTIme": "2025-02-16T19:23:45.000+00:00",
+        "organizerId": null,
+        "status_id": null,
+        "description": null
+    }
+]   
+
+.----Ticket inventory management for organizers (e.g., limit total tickets).----------
+----------------UpdateTicektsDetails------------
+api: PUT/api/events/updateTicket/{eventid}{
+request:{ 
+"eventid":123,
+"organizerid":5,
+"newTicketsAdded:50, (newTickets+oldticekts)
+"newticektPrice": 30$,
+"maxTicektsPerUser":2
+}
+
+response:
+{
+event_id:123,
+"Message":"Succesffully updated  Ticekt details"
+"TotalTicekts":70 (50+20),
+"newticektPrice": 30$,
+"maxTicektsPerUser":2
+}
+
+-----------Cancellation ByOrganizer-----------------
+api:  PUT/api/events/cancel/{id}
+request:{}
+"eventid":123
+"organiser_Id":6
+}
+// Note : An email will be sent to all the user who booked and refund is issued
+response:
+{
+"message:"SuccessfullyDCancelledEvent"
+}
+
+
+------------------Ticekt Management--------------------------------
+
+Ticket Management:
+1.Attendees can book tickets for events.
+
+2.Ticket inventory management for organizers (e.g., limit total tickets).
+3.Generate unique ticket IDs for attendees.
+4.Payments Integration (Mock API)
+
+-------------Book an Ticekt (TIcektController)-----------------
+api: POST/api/ticekts/book/{eventid}
+request:
+{
+"eventid":4
+"userid":7,
+"noOfTicektsWantToBook":2
+}
+response:{
+"message":"Successfully booked ticekt and you will receive email",
+"ticektId": 12345 // need to email this ticket id 
+}
+or 1 more response
+{
+"message": "failed to book an event"
+}
+--------Cancel Ticekt????????--------  //TO-DO
+
+--------------Get Ticekt Details-------------
+api :GET/api/ticekts/{ticektId}
+request:
+"ticektId":12345,
+"TicektsBooked":2,
+
+response:
+
+{
+"ticketid":12345
+"user":{
+"userId":2,
+"FullName:"mamatha p"
+}
+"eventId":1234,
+"event"{
+"name": "Bollywood retro",
+        "performer": "rakhi ",
+        "category": "dancing",
+        "city": "Dallas",
+        "eventStartTime": "2025-02-12T16:23:45.000+00:00",
+        "eventEndTIme": "2025-02-16T19:23:45.000+00:00",
+		organiser_id:123
+		}
+}
+-------Checked  In ---------
+api: Post/api/ticekts/checkedIn{ticketId}
+request:{
+"ticketId":1234
+}
+response:{
+"message": "successfully checked in ",
+"counter":1
+}
+}
+--------CheckOut------- // neeed to checout for usre to get check in again because  counter value will be 1 to make counter 0 you need to checkout
+api: GET/api/ticekts/checkedOut{ticketId}
+request:
+{
+"ticketId":1234
+}
+response{
+"message":"Checkouted Successfully",
+                                                  
+}
+
+
+
+
+
+
+
+
+

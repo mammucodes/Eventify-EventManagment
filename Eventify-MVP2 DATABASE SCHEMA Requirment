@@ -1,0 +1,41 @@
+----------MVP-2 DATABASE SCHEMA--------------------
+----CREATE EVENT Detais--------
+2.Event tabel ( event details)
+name (varchar2)  not null 
+event id autogenrate and primary key
+event performer (varchar2) not null
+event start time Timestamp not null 
+event endTime Timestamp not null
+event city (varchar2) not null 
+cateogry  varchar2
+event descrption varchar2
+organiserId INT
+
+3 cases :
+
+--------get ticekts Avaiable  -----( avaiable ticekts  table for  both user and organiser )
+TicektTable
+Id PrimaryKey,
+avaialbe Tickets INT
+ticektPrice INT
+maxTicektAllowed: INT
+Event ID ForeginKey Reference()
+
+
+
+
+
+---------USER BOOKD Ticket details----
+
+---first he gets events details -
+BookedTIcektTable
+
+BOOKEDTIcektID primary key
+EventId foreignkey reference (ID)Event
+UserId foreignkey reference (ID) user
+count(intital 0) // after check iN it should increment and after checkout decreement
+
+
+
+
+

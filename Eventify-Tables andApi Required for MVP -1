@@ -1,0 +1,253 @@
+Eventify -Event ManagmentPlatform:
+Eventify is a platform for managing and organizing events. The backend will power features like event creation, user management, ticketing, and analytics. This project will focus entirely on the backend architecture, ensuring scalability, security, and mainta
+
+
+1.Tables required
+1.User table: 
+user_id  Integer ( auto generate)
+name (varchar2)
+email (varchar2)(unique)(primary)
+password (varchar2)
+isorganizer (boolean) default false
+//role(Organizer, Attedndee) (varchar2)
+registered_on (date)
+
+2.Event tabel
+.name (varchar2)  not null 
+.event id autogenrate and primary key
+.event performer (varchar2) not null
+event start time Timestamp not null 
+event endTime Timestamp not null
+event city (varchar2) not null 
+cateogry  varchar2
+event descrption varchar2
+
+==================================================================================
+
+Restful apis for application
+
+1.
+Create User
+----------
+api:  POST /api/user
+input: 
+response: 
+
+create user
+ request:
+ 
+api: POST /apiuser/create
+input : UserDTO 
+request
+{
+"name":"raaj"
+""email":"naag@gmil.com"
+password":"Abc@123"
+"isOrganizer": false
+}
+
+response  api:
+
+{
+"user-id"123
+"message: sucessfully registered"
+
+if fails:
+{
+"message" "Failed to register user"
+400 if user side error
+500 internal server eror
+}
+}
+
+2/login api
+api: Post/apiuser/login
+rquest:
+{
+"email":"naag@gmil.com"
+"password":"Abc@123"
+}
+response{
+"JWT token"
+
+}
+response fail:
+{
+"message": " 404 /500 server error failed to authenticate "
+}
+
+=========GET USER Details=======
+url:GET/api/user/getuserdetailsById
+request:{
+"user-id":123
+"jwt token": "1235tg"
+}
+response{
+"name":"mamatha",
+"email":"mammu@gmail.com
+}
+
+
+===================Event APIS==============
+************Create Event api for organizer********
+url: POST/api/event/create
+header: JWT token
+request:
+{
+"name":Tollywood nights,
+"performer":"rahul siplingan"
+" start date&time":"12-12-2024 08:00 p.m",
+end time:"12-12-2024 11:00 p.m
+"category":"singing",
+"city":"Dallas"
+}
+
+response:{
+"eventid":123
+"message": " 200 0o succesfully created an event"
+}
+case 2: user is not organiser
+ request:
+{
+"name":"Bollywood Nights",
+"performer":"Badshah ",
+"eventstarttime":"2025-02-12T16:22:45Z",
+"eventendtime":"2025-02-16T19:23:45Z",
+"category":"singing",
+"city":"Dallas",
+"organizerId":22
+}
+response{
+  "message": "Passed user is not an organiser . so he cannot create an event",
+    "errorCode": "400",
+    "timestamp": "2025-01-10T19:34:24.8571913"
+}
+case 3 : user is not present
+request:
+{
+"name":"Bollywood Nights",
+"performer":"Badshah ",
+"eventstarttime":"2025-02-12T16:22:45Z",
+"eventendtime":"2025-02-16T19:23:45Z",
+"category":"singing",
+"city":"Dallas",
+"organizerId":1
+}
+response{
+   "message": "User with given id is not present to create event",
+    "errorCode": "400",
+    "timestamp": "2025-01-10T19:40:30.1110876"
+}
+}
+
+
+**********GET Event DetailsApi============
+url:GET/api/event/getbycityname{"dallas}
+request{
+"DateTime":"12-15-2024 5:15 p.m",
+}
+response{
+[{
+
+
+"name":Tollywood nights,
+"performer":"rahul siplingan"
+"date&time":"12-12-2024 08:00 p.m",
+end time:"12-12-2024 11:00 p.m
+"category":"singing",
+"city":"Dallas",
+"description":null
+},
+{
+
+"name":Bollywood hiphop,
+"performer":"badshah",
+"date&time":"11-12-2024 08:00 p.m",
+end time:"11-12-2024 11:00 p.m,
+"category":"singing",
+"city":"Dallas",
+"description":null
+}
+]
+}
+url:GET/api/event/getbycityname{"dallas}
+request{
+"performer:""rahul
+}
+response{
+[
+{
+
+"name":Tollywood nights,
+"performer":"rahul siplingan"
+"date&time":"12-12-2024 08:00 p.m",
+end time:"12-12-2024 11:00 p.m
+"category":"singing",
+"city":"Dallas"
+"description":null
+}
+]
+}
+============update an event details===========
+url: POST/api/event/updatebyeventid
+request:
+{
+"jwt token""12344
+"name":Tollywood nights,
+"performer":"rahul siplingan"
+
+"category":"singing",
+"city":"Dallas"
+}
+
+response{
+
+    "id": 15,
+    "name": "Bollywood retro",
+    "performer": "rahul splingli,malavika",
+    "city": "plano",
+    "category": "dancing",
+    "eventStartTime": "2025-02-12T16:22:45.000+00:00",
+    "eventEndTIme": "2025-02-16T19:23:45.000+00:00",
+    "description": null
+	}
+
+
+
+-------------delete API
+API: api/events/delete/18?organizerId=5
+RESPONSE
+{
+"sucessfully delted"
+}
+case 2: if organiser id is not present
+1 mmore example 
+request: 
+api/events/delete/19?organizerId=1 // if organiser id is not present
+response{
+
+    "message": "No  matching event with given organiserId is present",
+    "errorCode": "400",
+    "timestamp": "2025-01-10T18:35:07.4970346"
+}
+case3:
+---if event is not present and trying to delte
+request:api/events/delete/27?organizerId=1 
+
+response{
+"message": "Event with given id is not present",
+    "errorCode": "400",
+    "timestamp": "2025-01-10T18:53:41.2947215"
+
+}
+
+
+
+
+
+
+
+
+
+
+

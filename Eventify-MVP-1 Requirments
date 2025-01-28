@@ -1,0 +1,28 @@
+App Name: Eventify - Event Management Platform Backend
+Description:
+Eventify is a platform for managing and organizing events. The backend will power features like event creation, user management, ticketing, and analytics. This project will focus entirely on the backend architecture, ensuring scalability, security, and maintainability.
+
+MVP 1: Core Event Management
+User Management
+
+User registration and login (JWT-based authentication).
+Role-based access control (Organizer, Attendee).
+Basic user profile management (name, email, phone).
+
+Event Management
+
+Create, update, and delete events (only for organizers).
+View event details (open for all users).
+Search events by name, location, or category.
+Categories: Workshop, Concert, Conference, Meetup, etc.
+Database Requirements
+
+User Table: Details like ID, name, email, role, and password hash.
+Event Table: Details like ID, title, description, date, location, organizer ID, and category.
+
+Pending 
+delete an event
+and adding organiser id in event table
+Login api
+when creating an event, check if user is organizer.. if not give no access to create.. not an organizer
+
