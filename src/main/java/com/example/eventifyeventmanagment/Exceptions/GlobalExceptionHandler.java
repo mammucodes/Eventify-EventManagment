@@ -97,4 +97,9 @@ public class GlobalExceptionHandler {
         logger.error(("failed to verify email"));
         return ResponseEntity.badRequest().body(new ErrorResponse("Failed to verify the email otp","400"));
     }
+    @ExceptionHandler(OTPExpiredException.class)
+    public ResponseEntity<ErrorResponse> handleOTPExpiredException(OTPExpiredException oe){
+        logger.error("expired otp is passed");
+        return ResponseEntity.badRequest().body(new ErrorResponse("Otp passed is expired , please generate new opt and try to register","400"));
+    }
 }

@@ -49,6 +49,11 @@ public class TicketService {
     }
 
     //todo we can check if event or event tickets details or user details   present in data base parallely by using threads . do it later
+   //This method take eventID and ookeventticket object as inputs
+    //and books  ticket to an event  if tickets are available and user is already present in db
+    //retruns UserTicket object with all event ticket details
+    //throws eventticketdetailsnotfound, usernotfound,insufficentticketcount,  exception
+
     public UserTicket bookEventTicket(Integer eventId, BookEventTicketRequestDTO bookEventTicketRequestDTO) throws EventNotFoundException, EventTicketDetailsNotFOundException, InsufficientTicketsAvailableException, UserNotFoundException, PassedTicketCountIsMoreThanLimitException {
         Optional<Event> optionalEvent = eventRepository.findById(Long.valueOf(eventId));
         Event event = null;

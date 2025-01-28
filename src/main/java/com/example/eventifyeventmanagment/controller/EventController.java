@@ -130,7 +130,7 @@ public class EventController {
             return ResponseEntity.badRequest().body(new ErrorResponse("No  matching event with given organiserId is present", "400"));
         }
     }
-@PutMapping("/updatetickets/{eventId}")
+@PutMapping("/updateticket/{eventId}")
     public ResponseEntity<?> updateEventTicketDetails(@PathVariable Integer eventId,
             @RequestBody UpdateEventTicketsRequestDTO updateEventTicketsRequestDTO) throws EventTicketsPerUserPassedZeroException, EventNotFoundException, EventTicketsOrTicketsPriceNotFoundException, UserFoundIsNotOrganizerException {
         ResponseEntity<ErrorResponse> badRequest = validateUpdateEventTicketDetails(eventId,updateEventTicketsRequestDTO);

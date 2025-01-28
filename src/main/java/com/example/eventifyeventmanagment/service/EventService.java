@@ -288,7 +288,9 @@ public class EventService {
 
 
     }
-
+//this method helps you to build email body
+    //it takes userticket object
+ //   and retruns  a body of type string with all event details  which you want to send in body
     private String buildEmailBody(UserTicket user) {
 
         String newLine = "<br>";
@@ -303,12 +305,15 @@ public class EventService {
 
 
 //If Ticket price  is passed as 0 it means free event
+    //This method is used to update event ticket details
+    //it take input as eventid and updateeventticket object
+    //
+   //  and returns updated EventTicketsDetail object
 
     public EventTicketsDetails UpdateEventTicketDetails(Integer eventId, UpdateEventTicketsRequestDTO updateEventTicketsRequestDTO) throws
-            EventNotFoundException,
-            UserFoundIsNotOrganizerException,
-            EventTicketsOrTicketsPriceNotFoundException,
-            EventTicketsPerUserPassedZeroException {
+                                             EventNotFoundException,
+                                     UserFoundIsNotOrganizerException,
+                                   EventTicketsOrTicketsPriceNotFoundException{
 
         Optional<Event> optionalEvent = eventrepository.findById(Long.valueOf(eventId));
         Event event = null;

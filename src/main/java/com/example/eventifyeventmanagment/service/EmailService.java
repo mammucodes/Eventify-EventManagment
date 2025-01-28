@@ -2,6 +2,7 @@ package com.example.eventifyeventmanagment.service;
 
 import com.example.eventifyeventmanagment.Exceptions.DuplicateEmailException;
 import com.example.eventifyeventmanagment.Exceptions.EmailNotVerifedException;
+import com.example.eventifyeventmanagment.Exceptions.OTPExpiredException;
 import com.example.eventifyeventmanagment.dto.request.UserRegistrationDTO;
 import com.example.eventifyeventmanagment.dto.request.VerifyOTPandRegisterUserDTO;
 import com.example.eventifyeventmanagment.dto.response.UserDetailsResponse;
@@ -28,36 +29,27 @@ import java.util.Optional;
 public class EmailService {
 
 
-    private JavaMailSender mailSender;
+
 
     @Value("${spring.mail.username}")
     private String emailFrom;
 
-
+    private JavaMailSender mailSender;
     private EmailVerificationRepository emailVerificationRepository;
-
-
-    private UserRepository userRepository;
-
-    private UserService userService;
-
     private EmailVerficationService emailVerficationService;
 
     Logger logger = LoggerFactory.getLogger(EmailService.class);
 @Autowired
     public EmailService(JavaMailSender  mailSender,
-                       UserRepository userRepository,
-                        UserService userService,
                         EmailVerficationService emailVerficationService,
                         EmailVerificationRepository emailVerificationRepository) {
 
         this.mailSender = mailSender;
-        this.userRepository = userRepository;
-        this.userService = userService;
         this.emailVerficationService = emailVerficationService;
         this.emailVerificationRepository = emailVerificationRepository;
     }
-
+//this method  helps to send email to given email address
+    //if failed to send it throws an exception
     public void sendEmail(String toEmail, String subject, String body) {
 
         try {
@@ -76,12 +68,21 @@ public class EmailService {
             e.printStackTrace();
         }
     }
-
+//this method genrates random 6 digts otp and
+     // returns the otp number
     public String generateOTP() {
         return String.valueOf((int) (Math.random() * 900000) + 100000); // 6-digit random OTP
     }
-
+//This method take email as input and sends otp  to valid email address
+    //if already email is present in emailverfication db then it will delte old otp value ang generates new otp
     public void sendOtpEmail(String email) throws EmailNotVerifedException {
+    Optional< EmailVerification> emailVerification = emailVerificationRepository.findByEmail(email);
+logger.info("trying to check if this email already present in DB ");
+    if(emailVerification.isPresent()){
+        logger.info("passed email is already present in email_otp_verification table before sending another otp deleting the previous otp value with given email");
+        EmailVerification emailPresent = emailVerification.get();
+        emailVerificationRepository.delete(emailPresent);
+    }
 
         String otp = generateOTP();
 
@@ -99,38 +100,6 @@ public class EmailService {
         logger.info("sent otp to an email sucessfully");
     }
 
-    public User verifyOtpAndRegisterUser(VerifyOTPandRegisterUserDTO verifyOtp) throws EmailNotVerifedException, DuplicateEmailException {
 
-        Optional<User> existingUserByEmail = userRepository.findByEmail(verifyOtp.getEmail());
-        if (existingUserByEmail.isPresent()) {
-            logger.error("Registration failed: Email {} already exists", verifyOtp.getEmail());
-            throw new DuplicateEmailException("Email already presernt" + verifyOtp.getEmail());
-
-        }
-        String otp = verifyOtp.getOtp();
-        String email = verifyOtp.getEmail();
-        String name = verifyOtp.getName();
-        String password = verifyOtp.getPassword();
-        Optional<EmailVerification> record = emailVerificationRepository.findByEmail(email);
-
-
-        if (record.isPresent()) {
-            EmailVerification emailVerifed = record.get();
-            if (emailVerifed.getOtp().equals(otp)) {
-                emailVerificationRepository.save(record.get());
-
-            } else {
-                throw new EmailNotVerifedException("invalid otp /or failed to validate email");
-            }
-            UserRegistrationDTO registrationDTO = new UserRegistrationDTO(name, email, password);
-            User savedUser = userService.registerUser(registrationDTO);
-
-            logger.info("User sucessfully registered");
-            return savedUser;
-            // return ResponseEntity.ok("User successfully registered!");
-        } else {
-            throw new EmailNotVerifedException("invalid otp /or failed to validate email");
-        }
-    }
 }
 

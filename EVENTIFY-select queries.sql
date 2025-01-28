@@ -49,3 +49,6 @@ on u1_0.id=ut1_0.user_id where e1_0.event_start_time between "2024-01-24 22:14:0
 
 -- -----------EVENT STATUS OPTION QUERIES------------
 select * from event_status_options;
+
+-- ---------SElect email_otp_verification TABLE-------
+select * from email_otp_verification;

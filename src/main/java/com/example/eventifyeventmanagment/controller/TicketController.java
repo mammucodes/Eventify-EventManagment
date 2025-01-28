@@ -38,7 +38,7 @@ public class TicketController {
     }
 
     @GetMapping("/get/{ticketId}")
-    public ResponseEntity<?> getEventTicketDetails(@PathVariable Integer ticketId) throws UserBookedTicketDetailsNotFounException, InvalidStatusOption {
+    public ResponseEntity<?> getUserTicketDetails(@PathVariable Integer ticketId) throws UserBookedTicketDetailsNotFounException, InvalidStatusOption {
         if (ticketId == null || ticketId < 0) {
             return ResponseEntity.badRequest().body(new ErrorResponse("passed ticket id is not found in booked ticket details", "400"));
         }

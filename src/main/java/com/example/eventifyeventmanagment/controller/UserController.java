@@ -2,6 +2,7 @@ package com.example.eventifyeventmanagment.controller;
 
 import com.example.eventifyeventmanagment.Exceptions.DuplicateEmailException;
 import com.example.eventifyeventmanagment.Exceptions.EmailNotVerifedException;
+import com.example.eventifyeventmanagment.Exceptions.OTPExpiredException;
 import com.example.eventifyeventmanagment.Exceptions.UserNotFoundException;
 import com.example.eventifyeventmanagment.dto.request.EmailDtoRequest;
 import com.example.eventifyeventmanagment.dto.request.VerifyOTPandRegisterUserDTO;
@@ -11,6 +12,7 @@ import com.example.eventifyeventmanagment.dto.request.UserRegistrationDTO;
 import com.example.eventifyeventmanagment.entity.EmailVerification;
 import com.example.eventifyeventmanagment.entity.User;
 import com.example.eventifyeventmanagment.service.EmailService;
+import com.example.eventifyeventmanagment.service.EmailVerficationService;
 import com.example.eventifyeventmanagment.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,13 +30,17 @@ public class UserController {
     Logger logger = LoggerFactory.getLogger(UserController.class);
 
     private UserService userservice;
-
     private EmailService emailService;
 
+    private EmailVerficationService emailVerficationService;
+
     @Autowired
-    public UserController(UserService userservice,EmailService emailService) {
+    public UserController(UserService userservice,
+                          EmailVerficationService emailVerficationService,
+                            EmailService  emailService) {
 
         this.userservice = userservice;
+        this.emailVerficationService = emailVerficationService;
         this.emailService = emailService;
     }
 
@@ -117,9 +123,9 @@ public class UserController {
             return ResponseEntity.ok(" please verify your email OTP sent to " + email);
     }
     @PostMapping("/register-verified-email")
-    public ResponseEntity<?> verifyOtpAndRegisterUser(@RequestBody VerifyOTPandRegisterUserDTO verifyOTPandRegisterUserDTO) throws EmailNotVerifedException, DuplicateEmailException {
+    public ResponseEntity<?> verifyOtpAndRegisterUser(@RequestBody VerifyOTPandRegisterUserDTO verifyOTPandRegisterUserDTO) throws EmailNotVerifedException, DuplicateEmailException, OTPExpiredException {
 
-       User user =  emailService.verifyOtpAndRegisterUser(verifyOTPandRegisterUserDTO);
+       User user =  emailVerficationService.verifyOtpAndRegisterUser(verifyOTPandRegisterUserDTO);
         return  ResponseEntity.ok("sucessfully registered the user with Id"+user.getId());
 
 }
