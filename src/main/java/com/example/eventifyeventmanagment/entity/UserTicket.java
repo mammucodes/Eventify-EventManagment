@@ -15,10 +15,13 @@ public class UserTicket {
 
     @Column(name = "seats_booked", nullable = false)
     private Integer seatsBooked;
-    @Column(name = "count")
+    @Column(name = "checkIn_count")
     private Integer checkInCount;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @Column(name = "check_out_count")
+    private Integer checkOutCount;
+
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "event_id", referencedColumnName = "id")
     private Event event;
 
@@ -28,7 +31,8 @@ public class UserTicket {
     @Column(name = "ticket_booked_time", nullable = false)
     private LocalDateTime ticketBookedOn;
 
-
+ @Column(name="remainder_sent")
+    private boolean remainderSent;
 }
 
 

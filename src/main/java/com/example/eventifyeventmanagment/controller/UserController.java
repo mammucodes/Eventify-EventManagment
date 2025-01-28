@@ -1,18 +1,20 @@
 package com.example.eventifyeventmanagment.controller;
 
 import com.example.eventifyeventmanagment.Exceptions.DuplicateEmailException;
-import com.example.eventifyeventmanagment.Exceptions.DuplicateUsernameException;
+import com.example.eventifyeventmanagment.Exceptions.EmailNotVerifedException;
 import com.example.eventifyeventmanagment.Exceptions.UserNotFoundException;
-import com.example.eventifyeventmanagment.dto.ErrorResponse;
-import com.example.eventifyeventmanagment.dto.UserDetailsResponse;
-import com.example.eventifyeventmanagment.dto.UserRegistrationDTO;
+import com.example.eventifyeventmanagment.dto.request.EmailDtoRequest;
+import com.example.eventifyeventmanagment.dto.request.VerifyOTPandRegisterUserDTO;
+import com.example.eventifyeventmanagment.dto.response.ErrorResponse;
+import com.example.eventifyeventmanagment.dto.response.UserDetailsResponse;
+import com.example.eventifyeventmanagment.dto.request.UserRegistrationDTO;
+import com.example.eventifyeventmanagment.entity.EmailVerification;
 import com.example.eventifyeventmanagment.entity.User;
+import com.example.eventifyeventmanagment.service.EmailService;
 import com.example.eventifyeventmanagment.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatusCode;
-import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 
 import org.springframework.web.bind.annotation.*;
@@ -26,9 +28,14 @@ public class UserController {
     Logger logger = LoggerFactory.getLogger(UserController.class);
 
     private UserService userservice;
+
+    private EmailService emailService;
+
     @Autowired
-    public  UserController(UserService userservice){
+    public UserController(UserService userservice,EmailService emailService) {
+
         this.userservice = userservice;
+        this.emailService = emailService;
     }
 
     @PostMapping("/register")
@@ -83,6 +90,39 @@ public class UserController {
         return ResponseEntity.ok("User registered successfully with ID: " + registeredUser.getId());
         //return ResponseEntity.ok().body("success");
     }
+//another way to do it
+//    @PostMapping("/register")
+//    public ResponseEntity<?> register(@RequestParam String email) {
+//        return null;
+//    }
+//
+//    @PostMapping("/verify/useremail")
+//    public ResponseEntity<?> verify(@RequestParam String email) {
+//        return null;
+//    }
+    @PostMapping("/email-validate")
+    public ResponseEntity<?> sendOtp(@RequestParam String email) throws EmailNotVerifedException {
+        if (email == null || email.trim().isEmpty()) {
+            logger.error("Validation failed: Email is missing or empty email passed");
+            return ResponseEntity.badRequest().body(new ErrorResponse("Email must not be empty", "400"));
+        }
+
+        if (!isValid(email) ){
+            logger.error("Validation failed:Invalid email passed");
+            return ResponseEntity.badRequest().body(new ErrorResponse("must pass Valid email", "400"));
+
+        }
+
+            emailService.sendOtpEmail(email);
+            return ResponseEntity.ok(" please verify your email OTP sent to " + email);
+    }
+    @PostMapping("/register-verified-email")
+    public ResponseEntity<?> verifyOtpAndRegisterUser(@RequestBody VerifyOTPandRegisterUserDTO verifyOTPandRegisterUserDTO) throws EmailNotVerifedException, DuplicateEmailException {
+
+       User user =  emailService.verifyOtpAndRegisterUser(verifyOTPandRegisterUserDTO);
+        return  ResponseEntity.ok("sucessfully registered the user with Id"+user.getId());
+
+}
 
 
     @GetMapping("/{id}")
@@ -116,6 +156,19 @@ public class UserController {
 
     }
 
+    @PostMapping("/remainder/email")
+    public ResponseEntity<?> sendEmailToUsers(@RequestBody EmailDtoRequest emailrequestdto) {
+        String email = emailrequestdto.getEmailId();
+        String subject = emailrequestdto.getSubject();
+        String body = emailrequestdto.getBody();
+        try {
+            emailService.sendEmail(email, subject, body);
+            return ResponseEntity.ok("email sent sucessfully ");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Email  sending failed");
+        }
+
+    }
 
     private boolean isValid(String email) {
         String emailRegex = "^[a-zA-Z0-9_+&*-]+(?:\\.[a-zA-Z0-9_+&*-]+)*@[a-zA-Z0-9-]+(?:\\.[a-zA-Z0-9-]+)*$";

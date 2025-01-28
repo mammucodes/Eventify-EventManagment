@@ -1,6 +1,6 @@
 package com.example.eventifyeventmanagment.Exceptions;
 
-import com.example.eventifyeventmanagment.dto.ErrorResponse;
+import com.example.eventifyeventmanagment.dto.response.ErrorResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -85,5 +85,16 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleUserBookedTicketDetailsNotFounException(UserBookedTicketDetailsNotFounException ubt) {
         logger.error("No event tickets details with passed ticketId");
         return ResponseEntity.badRequest().body(new ErrorResponse("Passed TicketId details not found Exception ", "400"));
+    }
+    @ExceptionHandler(EventAlreadyCancelledException.class)
+    public ResponseEntity<ErrorResponse> handleEventAlreadyCancelledException(EventAlreadyCancelledException eac){
+        logger.error("This event already cancelled no need to cancel again");
+        return ResponseEntity.badRequest().body(new ErrorResponse("Passed event is already cancelled no need to cancel again","400"));
+    }
+
+    @ExceptionHandler(EmailNotVerifedException.class)
+    public ResponseEntity<ErrorResponse> handleEmailNotVerifedException(EmailNotVerifedException env){
+        logger.error(("failed to verify email"));
+        return ResponseEntity.badRequest().body(new ErrorResponse("Failed to verify the email otp","400"));
     }
 }

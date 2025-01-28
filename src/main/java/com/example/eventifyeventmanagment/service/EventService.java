@@ -1,17 +1,19 @@
 package com.example.eventifyeventmanagment.service;
 
 import com.example.eventifyeventmanagment.Exceptions.*;
-import com.example.eventifyeventmanagment.dto.*;
 
 import com.example.eventifyeventmanagment.dto.request.CreateEventRequestDTO;
+import com.example.eventifyeventmanagment.dto.request.UpdateEventRequestDTO;
+import com.example.eventifyeventmanagment.dto.request.UpdateEventTicketsRequestDTO;
+import com.example.eventifyeventmanagment.dto.response.CreateEventResponse;
+import com.example.eventifyeventmanagment.dto.response.EventTicketResponse;
+import com.example.eventifyeventmanagment.dto.request.GetEventDetailsFiltersByDto;
 import com.example.eventifyeventmanagment.entity.Event;
 import com.example.eventifyeventmanagment.entity.EventTicketsDetails;
 import com.example.eventifyeventmanagment.entity.User;
+import com.example.eventifyeventmanagment.entity.UserTicket;
 import com.example.eventifyeventmanagment.loaders.EventStatusStaticLoader;
-import com.example.eventifyeventmanagment.repository.EventRepository;
-import com.example.eventifyeventmanagment.repository.StatusRepository;
-import com.example.eventifyeventmanagment.repository.EventTicketRepository;
-import com.example.eventifyeventmanagment.repository.UserRepository;
+import com.example.eventifyeventmanagment.repository.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,19 +33,28 @@ public class EventService {
     private final EventTicketRepository ticketrepository;
     private final StatusRepository statusrepository;
     private final EventStatusStaticLoader staticLoader;
+    private final UserBookedTicketRepository userBookedTicketRepository;
+
+
+    private EmailService emailService;
 
     @Autowired
     public EventService(EventRepository eventrepository,
                         UserRepository userrepository,
                         EventTicketRepository ticketrepository,
                         StatusRepository statusrepository,
-                        EventStatusStaticLoader staticLoader) {
+                        EventStatusStaticLoader staticLoader,
+                        UserBookedTicketRepository userBookedTicketRepository,
+                        EmailService emailService
+    ) {
 
         this.eventrepository = eventrepository;
         this.userrepository = userrepository;
         this.ticketrepository = ticketrepository;
         this.statusrepository = statusrepository;
         this.staticLoader = staticLoader;
+        this.userBookedTicketRepository = userBookedTicketRepository;
+        this.emailService = emailService;
 
     }
 
@@ -237,7 +248,10 @@ public class EventService {
     //it throws  EventWithGivenOrganizerIsNotPresentException Exceptions
     // if both are present then it scuessfully delete the event
     //if for any Case event id and oraganiser id null is passed it will throw IllegealrgumentExceptiom
-    public void cancelAnEvent(int eventId, Integer organiserId) throws EventNotFoundException, EventWithGivenOrganizerIsNotPresentException {
+    public void cancelAnEvent(int eventId, Integer organiserId) throws
+            EventNotFoundException,
+            EventWithGivenOrganizerIsNotPresentException,
+            EventAlreadyCancelledException {
         logger.info("trying to check if event present in database");
         Optional<Event> optionalEvent = eventrepository.findById((long) eventId); // it returns empty event .even though no events present so first convert to Event object
         Event event = null;
@@ -252,14 +266,39 @@ public class EventService {
             logger.info("passed organised id is not present in the corresponding event cannot delete the event");
             throw new EventWithGivenOrganizerIsNotPresentException("event  with  given organiser is not present");
         }
+        Integer passedStatusId = event.getStatusId();
+        String passedStatusName = staticLoader.getStatusNameByUsingStatusId(passedStatusId);
+        if (passedStatusName.equals("cancelled")) {
+            throw new EventAlreadyCancelledException("this event is already cancelled no need to cancel again");
+        }
         String statusName = "cancelled";
         Integer statusId = staticLoader.getStatusIdByUsingStatusName(statusName);
         event.setStatusId(statusId);
         eventrepository.save(event);
-        //todo need to send  an email saying  event cancelled amount will be refunded
+
+        List<UserTicket> userTickets = userBookedTicketRepository.findTicketsByEventId(eventId);
+        for (UserTicket user : userTickets) {
+            String email = user.getUser().getEmail();
+            String body = buildEmailBody(user);
+//sending email to users who booked  ticket saying event cancelled
+            emailService.sendEmail(email, "The following event is cancelled", body);
+//todo need to do payment gateway for refund the money
+        }
         logger.info("cancelled  the event succesfully");
 
 
+    }
+
+    private String buildEmailBody(UserTicket user) {
+
+        String newLine = "<br>";
+        String body = "Event  " + user.getEvent().getName() + " is cancelled  we will refund the money" + newLine;
+        body += "Event Name: " + user.getEvent().getName() + newLine;
+        body += " performer :" + user.getEvent().getPerformer() + newLine;
+        body += "city :" + user.getEvent().getCity() + newLine;
+        body += "eventStartDate :" + user.getEvent().getEventStartTime() + newLine;
+        System.out.println(body);
+        return body;
     }
 
 

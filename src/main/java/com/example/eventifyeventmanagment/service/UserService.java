@@ -1,9 +1,8 @@
 package com.example.eventifyeventmanagment.service;
 
 import com.example.eventifyeventmanagment.Exceptions.DuplicateEmailException;
-import com.example.eventifyeventmanagment.Exceptions.DuplicateUsernameException;
 import com.example.eventifyeventmanagment.Exceptions.UserNotFoundException;
-import com.example.eventifyeventmanagment.dto.UserRegistrationDTO;
+import com.example.eventifyeventmanagment.dto.request.UserRegistrationDTO;
 import com.example.eventifyeventmanagment.entity.User;
 import com.example.eventifyeventmanagment.repository.UserRepository;
 import org.slf4j.Logger;
@@ -19,6 +18,10 @@ public class UserService {
     Logger logger = LoggerFactory.getLogger(UserService.class);
 
     private UserRepository userRepository;
+
+//    @Autowired
+//    private EmailService emailService;
+    //this created circular dependency and result in start application
 
     @Autowired // constructor injection
     public UserService(UserRepository userRepository) {
@@ -38,12 +41,7 @@ public class UserService {
 
 
 // we are checking only if email exist or not user name can be same
-        Optional<User> existingUserByEmail = userRepository.findByEmail(registrationDto.getEmail());
-        if (existingUserByEmail.isPresent()) {
-            logger.error("Registration failed: Email {} already exists", registrationDto.getEmail());
-            throw new DuplicateEmailException("Email already presernt" + registrationDto.getEmail());
 
-        }
 
         // Create a new user and set the fields
         User user = new User();
@@ -51,13 +49,17 @@ public class UserService {
         user.setEmail(registrationDto.getEmail());
         user.setPassword(registrationDto.getPassword()); //  need to Encrypt the password
         user.setRegisteredOn(LocalDateTime.now()); // Set the current registration date and time
-
+        user.setIsorganizer(registrationDto.isOrganizer());
         // Save the user to the database
         User savedUser = userRepository.save(user);
         logger.info("User registered successfully with ID: {}", savedUser.getId());
 
         return savedUser;
     }
+
+
+
+
 
     // This method takes user id and checks if present  returns user object
     // if not it throws user not found excepton

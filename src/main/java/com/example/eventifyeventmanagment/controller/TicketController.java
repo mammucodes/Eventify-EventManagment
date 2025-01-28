@@ -2,9 +2,9 @@ package com.example.eventifyeventmanagment.controller;
 
 import com.example.eventifyeventmanagment.Exceptions.*;
 import com.example.eventifyeventmanagment.dto.request.BookEventTicketRequestDTO;
-import com.example.eventifyeventmanagment.dto.BookEventTicketResponse;
-import com.example.eventifyeventmanagment.dto.ErrorResponse;
-import com.example.eventifyeventmanagment.dto.UserTicketResponseDTO;
+import com.example.eventifyeventmanagment.dto.response.BookEventTicketResponse;
+import com.example.eventifyeventmanagment.dto.response.ErrorResponse;
+import com.example.eventifyeventmanagment.dto.response.UserTicketResponseDTO;
 import com.example.eventifyeventmanagment.entity.UserTicket;
 import com.example.eventifyeventmanagment.service.TicketService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -55,6 +55,25 @@ public class TicketController {
 
     }
 
+    @PutMapping("/checkincount/{ticketId}")
+    public ResponseEntity<?> getCheckIn(@PathVariable Integer ticketId) throws UserBookedTicketDetailsNotFounException, InvalidStatusOption {
+        if (ticketId <= 0) {
+            return ResponseEntity.badRequest().body(new ErrorResponse("evendID cannot be less than or equal to zero", "400"));
+        }
+        ticketService.getCheckIn(ticketId);
+        return ResponseEntity.ok("Sucessfully  updated checkedIn  count of the user");
+    }
+
+    @PutMapping("/checkoutcount/{ticketId}")
+    public ResponseEntity<?> getCheckOut(@PathVariable Integer ticketId) throws UserBookedTicketDetailsNotFounException {
+        if (ticketId <= 0) {
+            return ResponseEntity.badRequest().body(new ErrorResponse("evendID cannot be less than or equal to zero", "400"));
+        }
+        ticketService.getCheckOut(ticketId);
+        return ResponseEntity.ok("Sucessfully  updated checkOut  count of the user");
+
+    }
+
     public ResponseEntity<ErrorResponse> validateBookEventTicket(int eventId, BookEventTicketRequestDTO bookEventTicketRequestDTO) {
         if (eventId <= 0) {
             return ResponseEntity.badRequest().body(new ErrorResponse("evendID cannot be less than or equal to zero", "400"));
@@ -71,4 +90,6 @@ public class TicketController {
         }
         return null;
     }
+
+
 }

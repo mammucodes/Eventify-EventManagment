@@ -1,7 +1,6 @@
 package com.example.eventifyeventmanagment.dto.request;
 
 
-import com.example.eventifyeventmanagment.dto.TicketsDetailRequestDTO;
 import lombok.Data;
 import lombok.ToString;
 

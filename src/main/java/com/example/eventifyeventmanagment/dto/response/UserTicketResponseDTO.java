@@ -1,8 +1,7 @@
-package com.example.eventifyeventmanagment.dto;
+package com.example.eventifyeventmanagment.dto.response;
 
-import com.example.eventifyeventmanagment.entity.Event;
-import com.example.eventifyeventmanagment.entity.User;
-import jakarta.persistence.*;
+import com.example.eventifyeventmanagment.dto.response.EventDetailsResponse;
+import com.example.eventifyeventmanagment.dto.response.UserDetailsResponse;
 import lombok.Data;
 import lombok.ToString;
 

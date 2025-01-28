@@ -1,14 +1,12 @@
-package com.example.eventifyeventmanagment.dto;
+package com.example.eventifyeventmanagment.dto.request;
 
 import lombok.Data;
 import lombok.ToString;
 
 import java.sql.Timestamp;
-
 @Data
 @ToString
-public class CreateEventResponse {
-    private Long id;
+public class UpdateEventRequestDTO {
     private  String name;
     private String performer;
     private String category;
@@ -16,10 +14,4 @@ public class CreateEventResponse {
     private Timestamp eventstarttime;
     private Timestamp eventendtime;
     private String description;
-    private int organizerId;
-    private Integer statusId;
-  //  private String status;
-    private EventTicketResponse eventTicketResponse;
-
-
 }

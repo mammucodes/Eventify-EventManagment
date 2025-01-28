@@ -1,10 +1,13 @@
 package com.example.eventifyeventmanagment.controller;
 
 import com.example.eventifyeventmanagment.Exceptions.*;
-import com.example.eventifyeventmanagment.dto.*;
 //import com.example.eventifyeventmanagment.dto.EventDTO;
 //import com.example.eventifyeventmanagment.dto.EventResponse;
 import com.example.eventifyeventmanagment.dto.request.CreateEventRequestDTO;
+import com.example.eventifyeventmanagment.dto.request.GetEventDetailsFiltersByDto;
+import com.example.eventifyeventmanagment.dto.request.UpdateEventRequestDTO;
+import com.example.eventifyeventmanagment.dto.request.UpdateEventTicketsRequestDTO;
+import com.example.eventifyeventmanagment.dto.response.*;
 import com.example.eventifyeventmanagment.entity.Event;
 import com.example.eventifyeventmanagment.entity.EventTicketsDetails;
 import com.example.eventifyeventmanagment.repository.EventRepository;
@@ -26,7 +29,7 @@ public class EventController {
     Logger logger = LoggerFactory.getLogger(EventController.class);
 
     @Autowired
-    public EventController(EventService eventservice, EventRepository eventrepository) {
+    public EventController(EventService eventservice) {
 
         this.eventservice = eventservice;
 
@@ -108,8 +111,8 @@ public class EventController {
     // To Do need to generate oraganiserId from JWt token
     //Request param is also known as Query Param
     @PutMapping("/cancel/{eventId}")
-    public ResponseEntity<?> deleteAnEvent(@PathVariable int eventId,
-                                           @RequestHeader Integer organizerId) {
+    public ResponseEntity<?> cancelAnEvent(@PathVariable int eventId,
+                                           @RequestHeader Integer organizerId)  throws EventAlreadyCancelledException{
 
         if (eventId == 0||organizerId==null||organizerId==0) {
 
@@ -120,15 +123,12 @@ public class EventController {
         //need to generate user id through jwt token
         try {
             eventservice.cancelAnEvent(eventId, organizerId);
-            return ResponseEntity.ok().body("Succesffully cancelled the event");
+            return ResponseEntity.ok().body("Succesffully cancelled the event mail ");
         } catch (EventNotFoundException ex) {
             return ResponseEntity.badRequest().body(new ErrorResponse("Event with given id is not present", "400"));
         } catch (EventWithGivenOrganizerIsNotPresentException eo) {
             return ResponseEntity.badRequest().body(new ErrorResponse("No  matching event with given organiserId is present", "400"));
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(new ErrorResponse("Exception from Internal Server side or unKnown Exception", "500"));
         }
-
     }
 @PutMapping("/updatetickets/{eventId}")
     public ResponseEntity<?> updateEventTicketDetails(@PathVariable Integer eventId,

@@ -1,10 +1,10 @@
 package com.example.eventifyeventmanagment.service;
 
 import com.example.eventifyeventmanagment.Exceptions.*;
-import com.example.eventifyeventmanagment.dto.EventDetailsResponse;
-import com.example.eventifyeventmanagment.dto.UserDetailsResponse;
+import com.example.eventifyeventmanagment.dto.response.EventDetailsResponse;
+import com.example.eventifyeventmanagment.dto.response.UserDetailsResponse;
 import com.example.eventifyeventmanagment.dto.request.BookEventTicketRequestDTO;
-import com.example.eventifyeventmanagment.dto.UserTicketResponseDTO;
+import com.example.eventifyeventmanagment.dto.response.UserTicketResponseDTO;
 import com.example.eventifyeventmanagment.entity.Event;
 import com.example.eventifyeventmanagment.entity.EventTicketsDetails;
 import com.example.eventifyeventmanagment.entity.User;
@@ -48,7 +48,7 @@ public class TicketService {
         this.staticLoader = staticLoader;
     }
 
-    //todo we can check if event or event tickets detaild or user details   present in data base parallely by using threads . do it later
+    //todo we can check if event or event tickets details or user details   present in data base parallely by using threads . do it later
     public UserTicket bookEventTicket(Integer eventId, BookEventTicketRequestDTO bookEventTicketRequestDTO) throws EventNotFoundException, EventTicketDetailsNotFOundException, InsufficientTicketsAvailableException, UserNotFoundException, PassedTicketCountIsMoreThanLimitException {
         Optional<Event> optionalEvent = eventRepository.findById(Long.valueOf(eventId));
         Event event = null;
@@ -176,5 +176,46 @@ public class TicketService {
         } else {
             throw new UserBookedTicketDetailsNotFounException("no event tickets details with given ticket Id" + ticketId);
         }
+    }
+
+    public void getCheckIn(Integer ticketId) throws UserBookedTicketDetailsNotFounException, InvalidStatusOption {
+
+        Optional<UserTicket> optionalUserTicket = bookedTicketRepository.findById(ticketId);
+        if (optionalUserTicket.isPresent()) {
+            logger.info("user ticket is present");
+            UserTicket userTicket = optionalUserTicket.get();
+            Integer checkInCount = userTicket.getCheckInCount();
+            checkInCount++;
+            userTicket.setCheckInCount(checkInCount);
+            bookedTicketRepository.save(userTicket);
+            logger.info("sucessfully updated check in count of the event");
+        } else {
+            throw new UserBookedTicketDetailsNotFounException("passed tickets details are not present");
+        }
+
+
+        // bookedTicketRepository.save(userTicket);
+
+    }
+
+    public void getCheckOut(Integer ticketId) throws UserBookedTicketDetailsNotFounException {
+
+        Optional<UserTicket> optionalUserTicket = bookedTicketRepository.findById(ticketId);
+        if (optionalUserTicket.isPresent()) {
+            logger.info("user ticket is present");
+            UserTicket userTicket = optionalUserTicket.get();
+            Integer checkOutCount = userTicket.getCheckOutCount();
+            if (checkOutCount == null) {
+                checkOutCount = 0;
+            }
+            checkOutCount++;
+            userTicket.setCheckOutCount(checkOutCount);
+            bookedTicketRepository.save(userTicket);
+            logger.info("sucessfully updated check out count of the event");
+        } else {
+            throw new UserBookedTicketDetailsNotFounException("passed tickets details are not present");
+        }
+
+
     }
 }

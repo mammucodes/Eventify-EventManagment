@@ -1,4 +1,4 @@
-package com.example.eventifyeventmanagment.dto;
+package com.example.eventifyeventmanagment.dto.request;
 
 import lombok.Data;
 import lombok.ToString;

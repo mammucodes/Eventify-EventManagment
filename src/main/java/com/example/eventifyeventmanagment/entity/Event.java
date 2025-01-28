@@ -27,8 +27,7 @@ public class Event {
     private Timestamp eventEndTime ;
     @Column(length = 100)
     private String description;
-    @Column(length = 100)
-    private String descrption;
+
     @Column(name="organizer_id")
     private Integer  organizerId ;
     @Column(name = "status_id",nullable = false)
