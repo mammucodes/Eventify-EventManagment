@@ -60,12 +60,16 @@ public class EmailVerficationService {
         if (existingUserByEmail.isPresent()) {
             logger.error("Registration failed: Email {} already exists", verifyOtp.getEmail());
             throw new DuplicateEmailException("Email already presernt" + verifyOtp.getEmail());
-
         }
+
         String otp = verifyOtp.getOtp();
         String email = verifyOtp.getEmail();
         String name = verifyOtp.getName();
         String password = verifyOtp.getPassword();
+        boolean isOrganizer = verifyOtp.getIsOrganizer();
+        //Boolean isOrganizer = verifyOtp.getOrganizer();
+        //if(isOrganizer==null)
+        //  isOrganizer = false;
 
         Optional<EmailVerification> record = emailVerificationRepository.findByEmail(email);
 
@@ -79,7 +83,13 @@ public class EmailVerficationService {
 
             if (emailVerifed.getOtp().equals(otp)) {
                 if (otpCreatedOn.isAfter(currentTimeThreeDaysBefore)) {
-                    emailVerificationRepository.save(record.get());
+
+                    UserRegistrationDTO registrationDTO = new UserRegistrationDTO(name, email, password);
+                    registrationDTO.setOrganizer(isOrganizer);
+                    User savedUser = userService.registerUser(registrationDTO);
+
+                    logger.info("User sucessfully registered");
+                    return savedUser;
                 } else {
                     throw new OTPExpiredException("passed otp is expired. please  generate new otp to register user");
                 }
@@ -87,11 +97,7 @@ public class EmailVerficationService {
             } else {
                 throw new EmailNotVerifedException("invalid otp /or failed to validate email");
             }
-            UserRegistrationDTO registrationDTO = new UserRegistrationDTO(name, email, password);
-            User savedUser = userService.registerUser(registrationDTO);
 
-            logger.info("User sucessfully registered");
-            return savedUser;
             // return ResponseEntity.ok("User successfully registered!");
         } else {
             throw new EmailNotVerifedException("invalid otp /or failed to validate email");

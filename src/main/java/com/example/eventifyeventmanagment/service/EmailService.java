@@ -79,7 +79,7 @@ public class EmailService {
     Optional< EmailVerification> emailVerification = emailVerificationRepository.findByEmail(email);
 logger.info("trying to check if this email already present in DB ");
     if(emailVerification.isPresent()){
-        logger.info("passed email is already present in email_otp_verification table before sending another otp deleting the previous otp value with given email");
+        logger.info("passed email is already present in email_otp_verification table before .sending another otp deleting the previous otp value with given email");
         EmailVerification emailPresent = emailVerification.get();
         emailVerificationRepository.delete(emailPresent);
     }

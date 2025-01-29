@@ -10,6 +10,7 @@ import com.example.eventifyeventmanagment.dto.request.UpdateEventTicketsRequestD
 import com.example.eventifyeventmanagment.dto.response.*;
 import com.example.eventifyeventmanagment.entity.Event;
 import com.example.eventifyeventmanagment.entity.EventTicketsDetails;
+import com.example.eventifyeventmanagment.loaders.EventStatusStaticLoader;
 import com.example.eventifyeventmanagment.repository.EventRepository;
 import com.example.eventifyeventmanagment.service.EventService;
 import org.slf4j.Logger;
@@ -27,11 +28,13 @@ public class EventController {
 
     private EventService eventservice;
     Logger logger = LoggerFactory.getLogger(EventController.class);
+    private EventStatusStaticLoader staticLoader;
 
     @Autowired
-    public EventController(EventService eventservice) {
+    public EventController(EventService eventservice,EventStatusStaticLoader staticLoader) {
 
         this.eventservice = eventservice;
+        this.staticLoader = staticLoader;
 
 
     }
@@ -83,6 +86,13 @@ public class EventController {
             response.setEventStartTime(event.getEventStartTime());
             response.setEventEndTIme(event.getEventEndTime());
             response.setCategory(event.getCategory());
+            response.setOrganizerId(event.getOrganizerId());
+            response.setDescription(event.getDescription());
+
+            Integer statusId = event.getStatusId();
+            String status =  staticLoader.getStatusNameByUsingStatusId(statusId);
+            response.setStatus(status);
+
             geteventsList.add(response);
         }
 

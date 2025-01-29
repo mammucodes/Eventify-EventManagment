@@ -1,6 +1,6 @@
 use eventify_db;
 -- ------INSERT INTO USERS-------
-INSERT INTO users (name, email, password, isorganizer, registered_on)
+INSERT INTO users (name, email, password, isorganizer, regusersistered_on)
 VALUES 
 ('John Doe', 'john.doe@example.com', 'securepassword1', 1, NOW()),
 ('Jane Smith', 'jane.smith@example.com', 'securepassword2', 1, NOW()),
@@ -37,27 +37,30 @@ INSERT into event_tickets(available_tickets,ticekt_price,max_ticekts_allowed_to_
 -- -------- CREATE USER BOOKED TICKET TABLE----------
 create table user_tickets_details(id int auto_increment primary key,
 event_id  bigint,
- constraint fk_event_id foreign key(event_id) REFERENCES events(id) ON DELETE SET NULL,
+ constraint fk_events_organizer foreign key(event_id) REFERENCES events(id) ON DELETE SET NULL,
  user_id bigint ,
  constraint fk_user_id foreign key(user_id) references users(id) on delete cascade,
  count int default 0);
  
  -- ------INSERT INTO user_tickets_details-------
- insert into  user_tickets_details(event_id,user_id,seats_booked,check_in_count,check_out_count)
+ insert into  user_tickets_details(event_id,user_id,seats_booked,ticket_booked_time, check_in_count)
  values
- (41,3,2,0,0),
- (42,3,1,0,0),
- (43,2,3,0,0);
+ (2,4,3,now(), null);
+ALTER TABLE user_tickets_details MODIFY check_in_count INT NOT NULL default 0;
+ 
+
+
 
 
 -- ------CREATE  EMail Verifcation TABLE-------
 create table email_otp_verification(id int  auto_increment primary key ,email varchar(200), otp varchar(50));
 
-select * from email_otp_verification;
+
 drop table email_otp_verification;
 -- ------INSERT into email_otp_verfication table--------
-insert into   email_otp_verification(email,otp)values();
+insert into   email_otp_verification(email,otp,otp_created_on)values('mamathapudukutapu@gmail.com','312057','2025-01-24 23:00:00');
 
+select * from  email_otp_verification;
 
 
 

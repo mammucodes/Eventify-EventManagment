@@ -56,7 +56,7 @@ public class TicketController {
     }
 
     @PutMapping("/checkincount/{ticketId}")
-    public ResponseEntity<?> getCheckIn(@PathVariable Integer ticketId) throws UserBookedTicketDetailsNotFounException, InvalidStatusOption {
+    public ResponseEntity<?> getCheckIn(@PathVariable Integer ticketId) throws UserBookedTicketDetailsNotFounException, InvalidStatusOption, EventCheckInTimeIsBeforeAllowedcheckInTimeException {
         if (ticketId <= 0) {
             return ResponseEntity.badRequest().body(new ErrorResponse("evendID cannot be less than or equal to zero", "400"));
         }

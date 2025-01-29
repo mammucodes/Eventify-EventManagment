@@ -29,8 +29,6 @@ public class User {
     @Column(name = "registered_on", nullable = false)
     private LocalDateTime registeredOn;  // Date and time when the user registered
 
-    public User(long l, String john, String mail, String password123, LocalDateTime now) {
-    }
 
     public User() {
 

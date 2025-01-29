@@ -42,24 +42,28 @@ public interface EventRepository extends JpaRepository<Event,Long> {
 
     @Query("SELECT e FROM Event e WHERE e.city = :city " +
             "AND e.performer LIKE :performer " +
-            "AND e.name LIKE :name "+
-            "AND e.statusId = :statusId "+
+            "AND e.name LIKE :name " +
+            "AND e.category LIKE :category " +
+            "AND e.statusId = :statusId " +
             "AND e.eventStartTime >= CURRENT_TIMESTAMP")
     List<Event> findByCityAndFilters(@Param("city") String city,
                                      @Param("performer") String performer,
                                      @Param("name") String name,
+                                     @Param("category") String category,
                                      @Param("statusId") Integer statusId);
 
 
     @Query("SELECT e FROM Event e WHERE e.city = :city " +
             "AND e.performer LIKE :performer " +
             "AND e.name LIKE :name " +
+            "AND e.category LIKE :category " +
             "AND e.statusId = :statusId "+
             "AND e.eventStartTime BETWEEN :startDate AND :endDate"
             )
     List<Event> findByCityAndFilters(@Param("city") String city,
                                      @Param("performer") String performer,
                                      @Param("name") String name,
+                                     @Param("category") String category,
                                      @Param("startDate") LocalDateTime startDate,
                                      @Param("endDate") LocalDateTime endDate,
                                      @Param("statusId") Integer statusId);

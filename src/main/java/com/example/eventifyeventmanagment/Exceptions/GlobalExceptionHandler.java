@@ -102,4 +102,10 @@ public class GlobalExceptionHandler {
         logger.error("expired otp is passed");
         return ResponseEntity.badRequest().body(new ErrorResponse("Otp passed is expired , please generate new opt and try to register","400"));
     }
+    @ExceptionHandler(EventCheckInTimeIsBeforeAllowedcheckInTimeException.class)
+
+    public ResponseEntity<ErrorResponse> handleEventStartTimeIsBeforeAllowedcheckInTimeException(EventCheckInTimeIsBeforeAllowedcheckInTimeException est){
+        logger.error("your event check in  time is beofore  allowed check in time");
+        return ResponseEntity.badRequest().body(new ErrorResponse("your event check in time is  before allowed check in time","400"));
+    }
 }

@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Period;
@@ -108,7 +109,8 @@ public class TicketService {
 
         userTicketDetails.setUser(user);
         userTicketDetails.setSeatsBooked(bookEventTicketRequestDTO.getNoOfSeats());
-        userTicketDetails.setCheckInCount(0);
+       // userTicketDetails.setCheckInCount(0); // intail default values
+       // userTicketDetails.setCheckOutCount(0); // intial default values
         userTicketDetails.setTicketBookedOn(LocalDateTime.now());
 
         UserTicket userTicket = bookedTicketRepository.save(userTicketDetails);
@@ -182,18 +184,36 @@ public class TicketService {
             throw new UserBookedTicketDetailsNotFounException("no event tickets details with given ticket Id" + ticketId);
         }
     }
-
-    public void getCheckIn(Integer ticketId) throws UserBookedTicketDetailsNotFounException, InvalidStatusOption {
+// todo checkIn and check out apis should take event start time and end time into considration like allow check in beofre 2 hrs of start of event and dont allow after event time is crossed
+//
+//
+    public void getCheckIn(Integer ticketId) throws UserBookedTicketDetailsNotFounException, InvalidStatusOption, EventCheckInTimeIsBeforeAllowedcheckInTimeException {
 
         Optional<UserTicket> optionalUserTicket = bookedTicketRepository.findById(ticketId);
         if (optionalUserTicket.isPresent()) {
             logger.info("user ticket is present");
             UserTicket userTicket = optionalUserTicket.get();
-            Integer checkInCount = userTicket.getCheckInCount();
-            checkInCount++;
-            userTicket.setCheckInCount(checkInCount);
-            bookedTicketRepository.save(userTicket);
-            logger.info("sucessfully updated check in count of the event");
+            LocalDateTime eventStartTime = userTicket.getEvent().getEventStartTime().toLocalDateTime();
+            LocalDateTime currentTime =   LocalDateTime.now();
+            LocalDateTime  checkInAllowedTime = eventStartTime.minusHours(3);
+          //  if(currentTime.isAfter(eventEndTime)){
+//                throw new EventAlreadyFinishedException("event you are trying to check in is already crossed cant allow");
+//            } //not required let if customer wants to come late we will allow
+            //if(currentTime.isEqual(checkInAllowedTime)|| currentTime.isAfter((checkInAllowedTime))
+            //you can write above logic as if currentTime is not before check In allowed time we allow to check in
+//
+             if(!currentTime.isBefore(checkInAllowedTime)){
+
+                 Integer checkInCount = userTicket.getCheckInCount();
+                 checkInCount++;
+                 userTicket.setCheckInCount(checkInCount);
+                 bookedTicketRepository.save(userTicket);
+                 logger.info("sucessfully updated check in count of the event");
+             }
+             else{
+                  throw  new EventCheckInTimeIsBeforeAllowedcheckInTimeException("event start time is before  allowed check in time . cant check in now . check in allowed only 3 hrs before event start time ");
+             }
+
         } else {
             throw new UserBookedTicketDetailsNotFounException("passed tickets details are not present");
         }

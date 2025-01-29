@@ -106,6 +106,7 @@ public class EventService {
 
 
         String statusName = requestdto.getStatus();
+
         if (statusName == null || statusName.isEmpty()) {
             int statusId = staticLoader.getStatusIdByUsingStatusName("available");
             event.setStatusId(statusId);
@@ -178,6 +179,7 @@ public class EventService {
         String performer = geteventsrequest.getPerformer();
         LocalDate eventStartDate = geteventsrequest.getEventStartDate();
         String statusName = geteventsrequest.getStatus();
+        String category = geteventsrequest.getCategory();
         Integer statusId;
         if (statusName == null || statusName.isEmpty()) {
             statusId = staticLoader.getStatusIdByUsingStatusName("available");
@@ -191,9 +193,10 @@ public class EventService {
 
         String performerParam = (performer == null) ? "%" : "%" + performer + "%";
         String nameParam = (eventName == null) ? "%" : "%" + eventName + "%";
+        String categoryParam = (category==null)?"%" : "%" + category + "%";
 
         if (eventStartDate == null) {
-            events = eventrepository.findByCityAndFilters(city, performerParam, nameParam, statusId);
+            events = eventrepository.findByCityAndFilters(city, performerParam, nameParam,categoryParam, statusId);
             return events;
         }
         // Calculate start and end of the given date
@@ -201,7 +204,7 @@ public class EventService {
         LocalDateTime endDate = eventStartDate.atTime(23, 59, 59); // 11:59 p.m.
 
 
-        events = eventrepository.findByCityAndFilters(city, performerParam, nameParam, startDate, endDate, statusId);
+        events = eventrepository.findByCityAndFilters(city, performerParam, nameParam,categoryParam, startDate, endDate, statusId);
         return events;
     }
 
@@ -235,6 +238,8 @@ public class EventService {
             }
             if (updateeventrequestdto.getEventendtime() != null)
                 event.setEventEndTime(updateeventrequestdto.getEventendtime());
+            if(updateeventrequestdto.getDescription()!=null)
+                event.setDescription(updateeventrequestdto.getDescription());
             // Save the updated entity
             return eventrepository.save(event);
         } else {
