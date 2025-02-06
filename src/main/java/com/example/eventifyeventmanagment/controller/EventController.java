@@ -13,6 +13,8 @@ import com.example.eventifyeventmanagment.entity.EventTicketsDetails;
 import com.example.eventifyeventmanagment.loaders.EventStatusStaticLoader;
 import com.example.eventifyeventmanagment.repository.EventRepository;
 import com.example.eventifyeventmanagment.service.EventService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +26,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("api/events")
+@Tag(name = "Event Controller", description = "Manage events in Eventify")
 public class EventController {
 
     private EventService eventservice;
@@ -40,6 +43,7 @@ public class EventController {
     }
 
     @PostMapping("/create")
+    @Operation(summary = "creates a new event ",description = "Add an event to the system and event can be created by only orangizer using his id and createeventrequest object details")
     public ResponseEntity<?> createEvent(@RequestBody CreateEventRequestDTO eventrequestdto) throws InvalidStatusOption {
 
         ResponseEntity<ErrorResponse> badRequest = validateCreateEventDTO(eventrequestdto);
@@ -62,6 +66,7 @@ public class EventController {
     }
 
     @GetMapping("/{city}")
+    @Operation(summary = "Get an event by city", description = "Fetch a s event by it s city")
     public ResponseEntity<?> getEventDetails(
             @PathVariable String city,
             @RequestBody(required = false) GetEventDetailsFiltersByDto geteventrequest
@@ -103,6 +108,7 @@ public class EventController {
 
 
     @PostMapping("/update/{id}")
+    @Operation(summary ="updating event details by event Id",description = "can update event detials by  event id and give required feilds  to update ")
     public ResponseEntity<?> updateEventDetails(@PathVariable int id,
 
                                                 @RequestBody(required = false) UpdateEventRequestDTO updaterequest) throws EventNotFoundException {
@@ -121,6 +127,7 @@ public class EventController {
     // To Do need to generate oraganiserId from JWt token
     //Request param is also known as Query Param
     @PutMapping("/cancel/{eventId}")
+    @Operation(summary = "To cancel an event",description = "can cancel event  by passing organizer and event id. only organizer can cancel the event .after cancelling the event status will updated to cancelled")
     public ResponseEntity<?> cancelAnEvent(@PathVariable int eventId,
                                            @RequestHeader Integer organizerId)  throws EventAlreadyCancelledException{
 
@@ -141,8 +148,9 @@ public class EventController {
         }
     }
 @PutMapping("/updateticket/{eventId}")
+@Operation(summary = "can update event ticket details",description = "organizer can update or pass event ticket detials  for particluar event like no of tickets avaiable, ticket price, max seats can be booked values")
     public ResponseEntity<?> updateEventTicketDetails(@PathVariable Integer eventId,
-            @RequestBody UpdateEventTicketsRequestDTO updateEventTicketsRequestDTO) throws EventTicketsPerUserPassedZeroException, EventNotFoundException, EventTicketsOrTicketsPriceNotFoundException, UserFoundIsNotOrganizerException {
+            @RequestBody UpdateEventTicketsRequestDTO updateEventTicketsRequestDTO) throws EventTicketsPerUserPassedZeroException, EventNotFoundException, EventTicketsOrTicketsPriceNotFoundException, UserFoundIsNotOrganizerException, EventAlreadyCancelledException {
         ResponseEntity<ErrorResponse> badRequest = validateUpdateEventTicketDetails(eventId,updateEventTicketsRequestDTO);
         if (badRequest != null)
             return badRequest;

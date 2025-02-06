@@ -1,15 +1,21 @@
 package com.example.eventifyeventmanagment.dto.request;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.ToString;
 
 @Data
 @ToString
+@Schema(description = "Details about verifyOtpAndRegisterUserDto object")
 public class VerifyOTPandRegisterUserDTO {
+    @Schema(description = "name of the user ", example = "Riya")
     private String name;
+    @Schema(description = "email of the user",example = "riay@gmail.com")
     private String email;
     private String password;
+    @Schema(description = "otp send to user eamil id", example = "342169")
     private String otp;
+    @Schema(description = "asking if user who is  registering is and Organizer ", example = "true")
     private boolean  isOrganizer;
 
     //writting getter andsetters for isOrganizer. becuase  by using @Data lombok is giving getter and setter as setOrganizerId() and getOrganizerId() which is missing Is

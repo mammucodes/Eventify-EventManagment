@@ -11,8 +11,6 @@ public class EventifyEventManagmentApplication {
 
     public static void main(String[] args) {
 
-
-
         SpringApplication.run(EventifyEventManagmentApplication.class, args);
     }
 

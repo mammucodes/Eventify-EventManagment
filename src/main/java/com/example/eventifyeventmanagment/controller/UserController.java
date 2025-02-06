@@ -14,6 +14,8 @@ import com.example.eventifyeventmanagment.entity.User;
 import com.example.eventifyeventmanagment.service.EmailService;
 import com.example.eventifyeventmanagment.service.EmailVerficationService;
 import com.example.eventifyeventmanagment.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +28,7 @@ import java.time.Period;
 
 @RestController
 @RequestMapping("api/users")
+@Tag(name="User Controller",description = "Managing user details")
 public class UserController {
     Logger logger = LoggerFactory.getLogger(UserController.class);
 
@@ -45,6 +48,7 @@ public class UserController {
     }
 
     @PostMapping("/register")
+    @Operation(summary = "registering user into eventify application", description = " register and adding user details to database")
     public ResponseEntity<?> registerUser(@RequestBody UserRegistrationDTO userregister) {
 
         if (userregister.getName() == null || userregister.getName().trim().isEmpty()) {
@@ -107,6 +111,7 @@ public class UserController {
 //        return null;
 //    }
     @PostMapping("/email-validate")
+    @Operation(summary = "sending otp to passed email", description = "api used before registering the user using api  as register user needs otp sent to email.")
     public ResponseEntity<?> sendOtp(@RequestParam String email) throws EmailNotVerifedException {
         if (email == null || email.trim().isEmpty()) {
             logger.error("Validation failed: Email is missing or empty email passed");
@@ -122,7 +127,9 @@ public class UserController {
             emailService.sendOtpEmail(email);
             return ResponseEntity.ok(" please verify your email OTP sent to " + email);
     }
+
     @PostMapping("/register-verified-email")
+    @Operation(summary = "verfied email  users are registered ",description = "Users are registered whose email is verified")
     public ResponseEntity<?> verifyOtpAndRegisterUser(@RequestBody VerifyOTPandRegisterUserDTO verifyOTPandRegisterUserDTO) throws EmailNotVerifedException, DuplicateEmailException, OTPExpiredException {
 
        User user =  emailVerficationService.verifyOtpAndRegisterUser(verifyOTPandRegisterUserDTO);
@@ -132,6 +139,7 @@ public class UserController {
 
 
     @GetMapping("/{id}")
+    @Operation(summary = "get User details",description = "can get user details by giving user id")
     public ResponseEntity<UserDetailsResponse> getUserDetails(@PathVariable int id) {
 
         //todo only proceed to next lines of code if authenticated else throw 401 error
@@ -161,21 +169,6 @@ public class UserController {
 
 
     }
-
-    @PostMapping("/remainder/email")
-    public ResponseEntity<?> sendEmailToUsers(@RequestBody EmailDtoRequest emailrequestdto) {
-        String email = emailrequestdto.getEmailId();
-        String subject = emailrequestdto.getSubject();
-        String body = emailrequestdto.getBody();
-        try {
-            emailService.sendEmail(email, subject, body);
-            return ResponseEntity.ok("email sent sucessfully ");
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Email  sending failed");
-        }
-
-    }
-
     private boolean isValid(String email) {
         String emailRegex = "^[a-zA-Z0-9_+&*-]+(?:\\.[a-zA-Z0-9_+&*-]+)*@[a-zA-Z0-9-]+(?:\\.[a-zA-Z0-9-]+)*$";
         return email.matches(emailRegex);

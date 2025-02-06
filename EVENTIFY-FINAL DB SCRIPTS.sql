@@ -34,6 +34,30 @@ event_id  bigint,
   check_out_count int default 0 not null, 
  remainder_sent  boolean  default false NOT NULL );
  
+ -- ----------ADD columns to user ticket table--------------
+  alter table user_tickets_details add column payment_intent_number  varchar(200)   not null;
+  ALTER TABLE user_tickets_details 
+RENAME COLUMN payment_intent_number to payment_intent_id;
+  alter table user_tickets_details add column  payment_status_id int ;
+  
+  select * from  user_tickets_details;
+  
+  
+ -- -----------create payment_status table
+ CREATE   TABLE payment_status_options(id INT auto_increment primary key, payment_status varchar(50) not null  unique);
+ 
+ insert into payment_status_options(payment_status)values('confirmed'),('pending'),('cancelled');
+ 
+ select * from payment_status_options;
+ 
+ ALTER TABLE user_tickets_details
+ADD COLUMN payment_status_id INT not null;
+
+ALTER TABLE events
+ADD CONSTRAINT fk_status_id FOREIGN KEY (status_id) REFERENCES event_status_options(id);
+  ALTER TABLE user_tickets_details
+DROP COLUMN payment_intent_number;
+ 
  -- ------CREATE  EMail Verifcation TABLE-------
 create table email_otp_verification(id int  auto_increment primary key ,email varchar(200)not null, otp varchar(50) not null,
 otp_created_on datetime not null);

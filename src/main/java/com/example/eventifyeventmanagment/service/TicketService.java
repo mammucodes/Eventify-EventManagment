@@ -1,6 +1,7 @@
 package com.example.eventifyeventmanagment.service;
 
 import com.example.eventifyeventmanagment.Exceptions.*;
+import com.example.eventifyeventmanagment.dto.request.EventBookingRequest;
 import com.example.eventifyeventmanagment.dto.response.EventDetailsResponse;
 import com.example.eventifyeventmanagment.dto.response.UserDetailsResponse;
 import com.example.eventifyeventmanagment.dto.request.BookEventTicketRequestDTO;
@@ -10,19 +11,19 @@ import com.example.eventifyeventmanagment.entity.EventTicketsDetails;
 import com.example.eventifyeventmanagment.entity.User;
 import com.example.eventifyeventmanagment.entity.UserTicket;
 import com.example.eventifyeventmanagment.loaders.EventStatusStaticLoader;
-import com.example.eventifyeventmanagment.repository.EventRepository;
-import com.example.eventifyeventmanagment.repository.EventTicketRepository;
-import com.example.eventifyeventmanagment.repository.UserBookedTicketRepository;
-import com.example.eventifyeventmanagment.repository.UserRepository;
+import com.example.eventifyeventmanagment.loaders.PaymentStatusLoader;
+import com.example.eventifyeventmanagment.repository.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Period;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -33,6 +34,7 @@ public class TicketService {
     private final UserBookedTicketRepository bookedTicketRepository;
     private final UserRepository userRepository;
     private final EventStatusStaticLoader staticLoader;
+    private final PaymentStatusLoader paymentStatusLoader;
 
 
     @Autowired
@@ -40,22 +42,24 @@ public class TicketService {
                          EventTicketRepository eventTicketRepository,
                          UserBookedTicketRepository bookedTicketRepository,
                          UserRepository userRepository,
-                         EventStatusStaticLoader staticLoader) {
+                         EventStatusStaticLoader staticLoader,
+                         PaymentStatusLoader paymentStatusLoader) {
 
         this.eventRepository = eventRepository;
         this.eventTicketRepository = eventTicketRepository;
         this.bookedTicketRepository = bookedTicketRepository;
         this.userRepository = userRepository;
         this.staticLoader = staticLoader;
+        this.paymentStatusLoader = paymentStatusLoader;
     }
 
     //todo we can check if event or event tickets details or user details   present in data base parallely by using threads . do it later
-   //This method take eventID and ookeventticket object as inputs
+    //This method take eventID and ookeventticket object as inputs
     //and books  ticket to an event  if tickets are available and user is already present in db
     //retruns UserTicket object with all event ticket details
     //throws eventticketdetailsnotfound, usernotfound,insufficentticketcount,  exception
 
-    public UserTicket bookEventTicket(Integer eventId, BookEventTicketRequestDTO bookEventTicketRequestDTO) throws EventNotFoundException, EventTicketDetailsNotFOundException, InsufficientTicketsAvailableException, UserNotFoundException, PassedTicketCountIsMoreThanLimitException {
+    public UserTicket bookEventTicket(Integer eventId, BookEventTicketRequestDTO bookEventTicketRequestDTO) throws EventNotFoundException, EventTicketDetailsNotFOundException, InsufficientTicketsAvailableException, UserNotFoundException, PassedTicketCountIsMoreThanLimitException, NoOfSeatsToBookNotFoundException {
         Optional<Event> optionalEvent = eventRepository.findById(Long.valueOf(eventId));
         Event event = null;
         if (optionalEvent.isPresent()) {
@@ -79,6 +83,9 @@ public class TicketService {
         }
         Integer maxTicketAllowedPerTicket = eventTicketsDetails.getMaxTicektsCanBook();
         Integer passedNoOfTicketsToBook = bookEventTicketRequestDTO.getNoOfSeats();
+        if (passedNoOfTicketsToBook == null) {
+            throw new NoOfSeatsToBookNotFoundException("need to pass no of seats to be booked");
+        }
         if (passedNoOfTicketsToBook > maxTicketAllowedPerTicket) {
 
             logger.info("passed ticket seat count " + passedNoOfTicketsToBook + "is more than  max seats allowed to booked" + maxTicketAllowedPerTicket);
@@ -109,8 +116,8 @@ public class TicketService {
 
         userTicketDetails.setUser(user);
         userTicketDetails.setSeatsBooked(bookEventTicketRequestDTO.getNoOfSeats());
-       // userTicketDetails.setCheckInCount(0); // intail default values
-       // userTicketDetails.setCheckOutCount(0); // intial default values
+        // userTicketDetails.setCheckInCount(0); // intail default values
+        // userTicketDetails.setCheckOutCount(0); // intial default values
         userTicketDetails.setTicketBookedOn(LocalDateTime.now());
 
         UserTicket userTicket = bookedTicketRepository.save(userTicketDetails);
@@ -184,7 +191,8 @@ public class TicketService {
             throw new UserBookedTicketDetailsNotFounException("no event tickets details with given ticket Id" + ticketId);
         }
     }
-// todo checkIn and check out apis should take event start time and end time into considration like allow check in beofre 2 hrs of start of event and dont allow after event time is crossed
+
+    // todo checkIn and check out apis should take event start time and end time into considration like allow check in beofre 2 hrs of start of event and dont allow after event time is crossed
 //
 //
     public void getCheckIn(Integer ticketId) throws UserBookedTicketDetailsNotFounException, InvalidStatusOption, EventCheckInTimeIsBeforeAllowedcheckInTimeException {
@@ -194,25 +202,24 @@ public class TicketService {
             logger.info("user ticket is present");
             UserTicket userTicket = optionalUserTicket.get();
             LocalDateTime eventStartTime = userTicket.getEvent().getEventStartTime().toLocalDateTime();
-            LocalDateTime currentTime =   LocalDateTime.now();
-            LocalDateTime  checkInAllowedTime = eventStartTime.minusHours(3);
-          //  if(currentTime.isAfter(eventEndTime)){
+            LocalDateTime currentTime = LocalDateTime.now();
+            LocalDateTime checkInAllowedTime = eventStartTime.minusHours(3);
+            //  if(currentTime.isAfter(eventEndTime)){
 //                throw new EventAlreadyFinishedException("event you are trying to check in is already crossed cant allow");
 //            } //not required let if customer wants to come late we will allow
             //if(currentTime.isEqual(checkInAllowedTime)|| currentTime.isAfter((checkInAllowedTime))
             //you can write above logic as if currentTime is not before check In allowed time we allow to check in
 //
-             if(!currentTime.isBefore(checkInAllowedTime)){
+            if (!currentTime.isBefore(checkInAllowedTime)) {
 
-                 Integer checkInCount = userTicket.getCheckInCount();
-                 checkInCount++;
-                 userTicket.setCheckInCount(checkInCount);
-                 bookedTicketRepository.save(userTicket);
-                 logger.info("sucessfully updated check in count of the event");
-             }
-             else{
-                  throw  new EventCheckInTimeIsBeforeAllowedcheckInTimeException("event start time is before  allowed check in time . cant check in now . check in allowed only 3 hrs before event start time ");
-             }
+                Integer checkInCount = userTicket.getCheckInCount();
+                checkInCount++;
+                userTicket.setCheckInCount(checkInCount);
+                bookedTicketRepository.save(userTicket);
+                logger.info("sucessfully updated check in count of the event");
+            } else {
+                throw new EventCheckInTimeIsBeforeAllowedcheckInTimeException("event start time is before  allowed check in time . cant check in now . check in allowed only 3 hrs before event start time ");
+            }
 
         } else {
             throw new UserBookedTicketDetailsNotFounException("passed tickets details are not present");
@@ -244,3 +251,6 @@ public class TicketService {
 
     }
 }
+
+
+

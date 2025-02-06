@@ -133,6 +133,7 @@ public class EventService {
         eventresponse.setCategory(savedEvent.getCategory());
         eventresponse.setOrganizerId(savedEvent.getOrganizerId());
         eventresponse.setStatusId(savedEvent.getStatusId());
+        eventresponse.setDescription(savedEvent.getDescription());
         logger.info("sucessfully set the event details in eventresponse object");
 
         if (requestdto.getEventTicketDetails() != null) {
@@ -316,9 +317,9 @@ public class EventService {
    //  and returns updated EventTicketsDetail object
 
     public EventTicketsDetails UpdateEventTicketDetails(Integer eventId, UpdateEventTicketsRequestDTO updateEventTicketsRequestDTO) throws
-                                             EventNotFoundException,
-                                     UserFoundIsNotOrganizerException,
-                                   EventTicketsOrTicketsPriceNotFoundException{
+            EventNotFoundException,
+            UserFoundIsNotOrganizerException,
+            EventTicketsOrTicketsPriceNotFoundException, EventAlreadyCancelledException {
 
         Optional<Event> optionalEvent = eventrepository.findById(Long.valueOf(eventId));
         Event event = null;
@@ -332,6 +333,11 @@ public class EventService {
             logger.info("not an organizer cannot update ticekt details");
             throw new UserFoundIsNotOrganizerException("passed organizerId is not an an oraganizer so, cannot update ticekt details");
         }
+        Integer statusId = event.getStatusId();
+        String status = staticLoader.getStatusNameByUsingStatusId(statusId);
+                if(status.equals("cancelled")){
+                    throw new EventAlreadyCancelledException("this event is already cancelled so no use of adding event ticket details");
+                }
         Optional<EventTicketsDetails> ticketsDetails = ticketrepository.findByEventId(eventId);
 
         if (ticketsDetails.isPresent()) {

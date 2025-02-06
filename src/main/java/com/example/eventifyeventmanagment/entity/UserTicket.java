@@ -34,6 +34,11 @@ public class UserTicket {
 
  @Column(name="remainder_sent",nullable = false)
     private boolean remainderSent;
+@Column(name="payment_intent_id",nullable = false)
+    private String paymentIntentId;
+@Column(name="payment_status_id")
+    private Integer paymentStatusId;
+
 }
 
 

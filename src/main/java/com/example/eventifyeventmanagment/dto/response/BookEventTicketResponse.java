@@ -11,4 +11,6 @@ public class BookEventTicketResponse {
     private String message;
     private Integer ticketId;
     private LocalDateTime bookedOn;
+    private Integer paymentIntentNumber;
+    private  String paymentStatus;
 }
