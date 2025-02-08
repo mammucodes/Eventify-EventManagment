@@ -46,6 +46,13 @@ public interface UserBookedTicketRepository extends JpaRepository<UserTicket, In
     @Query("SELECT ut FROM UserTicket ut WHERE ut.event.id = :eventId")
     List<UserTicket> findTicketsByEventId(@Param("eventId") Integer eventId);
 
+    UserTicket findByPaymentIntentId(String paymentIntentId);
+@Query("select ut from UserTicket  ut where ut.paymentStatusId=:paymentStatusId and ut.ticketBookedOn<= :timeLimit")
+    List<UserTicket> findPendingPayments(@Param("paymentStatusId") Integer paymentStatusId,
+                                         @Param("timeLimit") LocalDateTime timeLimit);
+
+//    List<UserTicket> findPendingPayments();
+
 //    @Query("Select t from UserTicket t  " +
 //            "join Event e on e.id = t.event " +
 //            "join User u on u.id=t.userId " +

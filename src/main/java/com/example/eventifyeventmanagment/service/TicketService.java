@@ -2,6 +2,7 @@ package com.example.eventifyeventmanagment.service;
 
 import com.example.eventifyeventmanagment.Exceptions.*;
 import com.example.eventifyeventmanagment.dto.request.EventBookingRequest;
+import com.example.eventifyeventmanagment.dto.request.PaymentConfirmRequest;
 import com.example.eventifyeventmanagment.dto.response.EventDetailsResponse;
 import com.example.eventifyeventmanagment.dto.response.UserDetailsResponse;
 import com.example.eventifyeventmanagment.dto.request.BookEventTicketRequestDTO;
@@ -13,9 +14,16 @@ import com.example.eventifyeventmanagment.entity.UserTicket;
 import com.example.eventifyeventmanagment.loaders.EventStatusStaticLoader;
 import com.example.eventifyeventmanagment.loaders.PaymentStatusLoader;
 import com.example.eventifyeventmanagment.repository.*;
+import com.stripe.Stripe;
+import com.stripe.exception.InvalidRequestException;
+import com.stripe.exception.StripeException;
+import com.stripe.model.PaymentIntent;
+import com.stripe.param.PaymentIntentConfirmParams;
+import com.stripe.param.PaymentIntentCreateParams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
@@ -28,6 +36,8 @@ import java.util.Optional;
 
 @Service
 public class TicketService {
+    @Value("${stripe.api.key}")
+    private String stripeApiKey;
     Logger logger = LoggerFactory.getLogger(UserService.class);
     private EventRepository eventRepository;
     private final EventTicketRepository eventTicketRepository;
@@ -59,7 +69,7 @@ public class TicketService {
     //retruns UserTicket object with all event ticket details
     //throws eventticketdetailsnotfound, usernotfound,insufficentticketcount,  exception
 
-    public UserTicket bookEventTicket(Integer eventId, BookEventTicketRequestDTO bookEventTicketRequestDTO) throws EventNotFoundException, EventTicketDetailsNotFOundException, InsufficientTicketsAvailableException, UserNotFoundException, PassedTicketCountIsMoreThanLimitException, NoOfSeatsToBookNotFoundException {
+    public UserTicket bookEventTicket(Integer eventId, BookEventTicketRequestDTO bookEventTicketRequestDTO) throws EventNotFoundException, EventTicketDetailsNotFOundException, InsufficientTicketsAvailableException, UserNotFoundException, PassedTicketCountIsMoreThanLimitException, NoOfSeatsToBookNotFoundException, StripeException {
         Optional<Event> optionalEvent = eventRepository.findById(Long.valueOf(eventId));
         Event event = null;
         if (optionalEvent.isPresent()) {
@@ -99,6 +109,7 @@ public class TicketService {
             logger.info("Passed no of tickets" + passedNoOfTicketsToBook + " to be booked is more than  avaialble tickets" + totalAvailableTickets + " from event");
             throw new InsufficientTicketsAvailableException("Passed no of tickets to be booked is more than  avaialble tickets from event Exception");
         }
+
         UserTicket userTicketDetails = new UserTicket();
 
         userTicketDetails.setEvent(event); // this is required because in response we are gving complete  booked ticket details;
@@ -113,12 +124,21 @@ public class TicketService {
         } else {
             throw new UserNotFoundException("passed user id is not present in db " + bookEventTicketRequestDTO.getUserId());
         }
+        Integer ticketPrice = passedNoOfTicketsToBook * eventTicketsDetails.getTicketPrice();
+
+        String paymentIntentId = createPaymentIntentId(ticketPrice);
+
+        userTicketDetails.setPaymentIntentId(paymentIntentId);
+
 
         userTicketDetails.setUser(user);
         userTicketDetails.setSeatsBooked(bookEventTicketRequestDTO.getNoOfSeats());
         // userTicketDetails.setCheckInCount(0); // intail default values
         // userTicketDetails.setCheckOutCount(0); // intial default values
         userTicketDetails.setTicketBookedOn(LocalDateTime.now());
+
+        Integer paymentStatusId = paymentStatusLoader.getPaymentStatusIdByUsingStatusName("pending");
+        userTicketDetails.setPaymentStatusId(paymentStatusId);
 
         UserTicket userTicket = bookedTicketRepository.save(userTicketDetails);
         logger.info("sucessfully saved user ticket details to database");
@@ -135,6 +155,28 @@ public class TicketService {
         return userTicket;
     }
 
+
+    public String createPaymentIntentId(Integer ticketPriceInDollars) throws StripeException {
+        // Step 1: Create a PaymentIntent in Stripe
+
+
+        Stripe.apiKey = stripeApiKey; // Ensure API key is set before calling Stripe
+
+        PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
+                .setAmount(ticketPriceInDollars * 100L) // Amount in cents (e.g., 1000 = $10.00)
+                .setCurrency("usd")
+                .setAutomaticPaymentMethods(
+                        PaymentIntentCreateParams.AutomaticPaymentMethods.builder()
+                                .setEnabled(true) // Let Stripe handle payment methods
+                                .setAllowRedirects(PaymentIntentCreateParams.AutomaticPaymentMethods.AllowRedirects.NEVER)
+                                .build()
+                )
+                .build();
+
+        PaymentIntent pi = PaymentIntent.create(params);
+        String paymentIntentId = pi.getId();
+        return paymentIntentId;
+    }
 
     public UserTicketResponseDTO getEventTicketDetails(Integer ticketId) throws UserBookedTicketDetailsNotFounException, InvalidStatusOption {
         Optional<UserTicket> optionalUserTicket = bookedTicketRepository.findById(ticketId);
@@ -250,7 +292,98 @@ public class TicketService {
 
 
     }
+
+    public UserTicket confirmPayment(PaymentIntent paymentIntent, PaymentConfirmRequest request) throws Exception {
+
+
+        PaymentIntentConfirmParams params = PaymentIntentConfirmParams.builder()
+                .setPaymentMethod(request.getPaymentMethodId()) // Attach payment method
+                .build();
+
+        paymentIntent.setPaymentMethod(request.getPaymentMethodId());
+
+        PaymentIntent confirmedPaymentIntent = null;
+        try {
+            confirmedPaymentIntent = paymentIntent.confirm(params);
+        }
+        catch(InvalidRequestException ire){
+            logger.error("stripe exception occured failed to confirm payment "+ire.getMessage());
+            throw new PaymentFailedException("stripe exception occured failed to confirm payment"+ ire.getMessage()+" "+ire.getClass().getName());
+        }
+        catch(Exception e){
+            logger.error("Unknown Exception occured "+e.getMessage());
+            throw new Exception("unknown exception occured"+e.getMessage());
+        }
+
+        //todo not always a PaymentIntent object.. fix later
+       // PaymentIntent confirmedPaymentIntent = testStripeApisForPayments(request.getPaymentIntentId(), request.getPaymentMethodId());
+//if(confirmedPaymentIntent!=null) {
+    String paymentStatus = confirmedPaymentIntent.getStatus();
+
+
+        UserTicket ticket = bookedTicketRepository.findByPaymentIntentId(request.getPaymentIntentId());
+        // Step 1: Check Payment Status
+        if ("succeeded".equals(paymentStatus)) {
+            // Step 2: Update payment status in DB
+
+            Integer paymentStatusId = paymentStatusLoader.getPaymentStatusIdByUsingStatusName("confirmed");
+            ticket.setPaymentStatusId(paymentStatusId);
+            ticket = bookedTicketRepository.save(ticket);
+
+        } else {
+            //  throw new PaymentFailedException("cannot complete the payment. payment time exceeded");
+            if (paymentStatus.equals("canceled")) {
+                Integer paymentStatusId = paymentStatusLoader.getPaymentStatusIdByUsingStatusName(paymentStatus);
+                ticket.setPaymentStatusId(paymentStatusId);
+                Long eventId = ticket.getEvent().getId();
+                Optional<EventTicketsDetails> optionalEventTicketsDetails = eventTicketRepository.findByEventId(eventId.intValue());
+                if (optionalEventTicketsDetails.isPresent()) {
+                    EventTicketsDetails eventTicketsDetails = optionalEventTicketsDetails.get();
+                    Integer newAvaiableTickets = eventTicketsDetails.getAvailableTickets() + ticket.getSeatsBooked();
+                    eventTicketsDetails.setAvailableTickets(newAvaiableTickets);
+                    eventTicketRepository.save(eventTicketsDetails);
+                } else {
+                    throw new EventTicketDetailsNotFOundException("no event tiket deetails with given event id");//todo  exception response should be with paymentIntendId ,paymentstatus
+                }
+
+            }
+
+
+        }
+        return ticket;
+    }
+
+
+    public Object testStripeApisForPayments(String paymentIntendId, String paymentMethodId){
+
+        PaymentIntent intent = null;
+        try {
+            intent = PaymentIntent.retrieve(paymentIntendId);
+        } catch (StripeException e) {
+           logger.error("PaymentIntent.retrieve failed with StripeException {}", e.getMessage());
+           return "PaymentIntent.retrieve failed";
+        }
+        String paymentStatus = intent.getStatus();
+        logger.info("payment status before  confirm api called {}", paymentStatus);
+
+        PaymentIntentConfirmParams params = PaymentIntentConfirmParams.builder()
+                .setPaymentMethod(paymentMethodId) // Attach payment method
+                .build();
+
+
+        PaymentIntent confirmedPaymentIntent = null;
+        try {
+            confirmedPaymentIntent = intent.confirm(params);
+            logger.info("payment status after confirm api called {}", confirmedPaymentIntent.getStatus());
+        } catch (Exception e) {
+            logger.info("Exception occured while creating confirm payment {} {}", e.getClass().getName(), e.getMessage());
+            return "stripe confirm failed with exception";
+        }
+        return confirmedPaymentIntent;
+    }
+
 }
+
 
 
 
