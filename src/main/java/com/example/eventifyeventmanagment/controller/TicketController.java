@@ -3,12 +3,15 @@ package com.example.eventifyeventmanagment.controller;
 import com.example.eventifyeventmanagment.Exceptions.*;
 import com.example.eventifyeventmanagment.dto.request.BookEventTicketRequestDTO;
 import com.example.eventifyeventmanagment.dto.request.EventBookingRequest;
+import com.example.eventifyeventmanagment.dto.request.PaymentConfirmRequest;
 import com.example.eventifyeventmanagment.dto.response.BookEventTicketResponse;
 import com.example.eventifyeventmanagment.dto.response.ErrorResponse;
 import com.example.eventifyeventmanagment.dto.response.UserTicketResponseDTO;
 import com.example.eventifyeventmanagment.entity.UserTicket;
+import com.example.eventifyeventmanagment.loaders.PaymentStatusLoader;
 import com.example.eventifyeventmanagment.service.TicketService;
 import com.stripe.Stripe;
+import com.stripe.exception.InvalidRequestException;
 import com.stripe.exception.StripeException;
 import com.stripe.model.PaymentIntent;
 import com.stripe.param.PaymentIntentCreateParams;
@@ -18,13 +21,16 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("api/tickets")
 public class TicketController {
     private TicketService ticketService;
 
-    @Value("${stripe.api.key}")
-    private String stripeApiKey;
+    @Autowired
+    private PaymentStatusLoader paymentStatusLoader;
+
 
     @Autowired
     public TicketController(TicketService ticketService) {
@@ -32,26 +38,38 @@ public class TicketController {
     }
 
 
-
     @PostMapping("/bookticket/{eventId}")
-    @Operation(summary = "user can book event ticket",description = " user can book event tickets by using event id and by giving ticketrequest object")
-    public ResponseEntity<?> bookEventTicket(@PathVariable int eventId, @RequestBody BookEventTicketRequestDTO bookEventTicketRequestDTO) throws EventTicketDetailsNotFOundException, EventNotFoundException, InsufficientTicketsAvailableException, UserNotFoundException, PassedTicketCountIsMoreThanLimitException, NoOfSeatsToBookNotFoundException {
+    @Operation(summary = "user can book event ticket", description = " user can book event tickets by using event id and by giving ticketrequest object")
+    public ResponseEntity<?> bookEventTicket(@PathVariable int eventId, @RequestBody BookEventTicketRequestDTO bookEventTicketRequestDTO) throws EventTicketDetailsNotFOundException, EventNotFoundException,
+            InsufficientTicketsAvailableException,
+            UserNotFoundException,
+            PassedTicketCountIsMoreThanLimitException,
+            NoOfSeatsToBookNotFoundException,
+            StripeException {
+
 
         ResponseEntity<ErrorResponse> badRequest = validateBookEventTicket(eventId, bookEventTicketRequestDTO);
         if (badRequest != null) {
             return badRequest;
         }
+
+
         UserTicket bookedTicketDetails = ticketService.bookEventTicket(eventId, bookEventTicketRequestDTO);
         BookEventTicketResponse ticketResponse = new BookEventTicketResponse();
         ticketResponse.setTicketId(bookedTicketDetails.getId());
         ticketResponse.setMessage("Sucessfully booked tickets ");
         ticketResponse.setBookedOn(bookedTicketDetails.getTicketBookedOn());
+        ticketResponse.setPaymentIntentId(bookedTicketDetails.getPaymentIntentId());
+
+        String paymentStatus = paymentStatusLoader.getPaymentStatusNameByUsingStatusId(bookedTicketDetails.getPaymentStatusId());
+        ticketResponse.setPaymentStatus(paymentStatus);
+
         return ResponseEntity.ok(ticketResponse);
 
     }
 
     @GetMapping("/get/{ticketId}")
-    @Operation(summary = "User ticket details",description = "user can get  event ticket details by giving ticket Id")
+    @Operation(summary = "User ticket details", description = "user can get  event ticket details by giving ticket Id")
     public ResponseEntity<?> getUserTicketDetails(@PathVariable Integer ticketId) throws UserBookedTicketDetailsNotFounException, InvalidStatusOption {
         if (ticketId == null || ticketId < 0) {
             return ResponseEntity.badRequest().body(new ErrorResponse("passed ticket id is not found in booked ticket details", "400"));
@@ -80,7 +98,7 @@ public class TicketController {
     }
 
     @PutMapping("/checkoutcount/{ticketId}")
-    @Operation(summary = "user can check out from the event ",description = "user can checkout from the event in between ")
+    @Operation(summary = "user can check out from the event ", description = "user can checkout from the event in between ")
     public ResponseEntity<?> getCheckOut(@PathVariable Integer ticketId) throws UserBookedTicketDetailsNotFounException {
         if (ticketId <= 0) {
             return ResponseEntity.badRequest().body(new ErrorResponse("evendID cannot be less than or equal to zero", "400"));
@@ -108,4 +126,35 @@ public class TicketController {
     }
 
 
+    @PostMapping("/payments/confirm")
+    public ResponseEntity<?> confirmTicketPayment(@RequestBody PaymentConfirmRequest request) throws Exception {
+        try {
+            PaymentIntent intent = PaymentIntent.retrieve(request.getPaymentIntentId());
+            System.out.println(intent.getStatus());
+            UserTicket ticket = null;
+            try {
+                ticket = ticketService.confirmPayment(intent, request);
+            } catch (PaymentFailedException ire) {
+               return  ResponseEntity.badRequest().body(new ErrorResponse(ire.getMessage() + " " + ire.getClass().getName() + " ", " 400"));
+
+            }
+
+            if (ticket != null) {
+                return ResponseEntity.ok(Map.of("status", "Payment Confirmed"));
+            } else {
+                return ResponseEntity.badRequest().body(Map.of("status", "Payment Failed"));
+
+            }
+        }catch(Exception ex) {
+            System.out.println("EXCEPTION : " + ex.getMessage());
+            return null;
+        }
+
+    }
+
+
+    @PostMapping("/stripe/test")
+    public ResponseEntity<?> testStripeApi(@RequestBody PaymentConfirmRequest request) {
+        return ResponseEntity.ok().body(ticketService.testStripeApisForPayments(request.getPaymentIntentId(), request.getPaymentMethodId()));
+    }
 }
