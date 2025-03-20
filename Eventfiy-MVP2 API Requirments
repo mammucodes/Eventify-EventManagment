@@ -48,9 +48,10 @@ response {
 
  -----------------GET EventDetails---------------
 api: GET/api/events/{city}
-
+************
 request:{
 city = "dallas"
+*****************
 }
 
 response:
@@ -93,6 +94,7 @@ response:
 
     }
 ]
+**************
 request:
 {
 "name":"Bolly",
@@ -100,8 +102,8 @@ request:
 "category":"dancing",
 "status":"available"
 
-
-   } 
+   }
+   ****************
 response:
 [
 {
@@ -192,12 +194,13 @@ or 1 more response
 api :GET/api/ticekts/{ticektId}
 request:
 "ticektId":12345,
-"TicektsBooked":2,
+
 
 response:
 
 {
 "ticketid":12345
+"TicektsBooked":2,
 "user":{
 "userId":2,
 "FullName:"mamatha p"
@@ -233,8 +236,36 @@ response{
 "message":"Checkouted Successfully",
                                                   
 }
+---Register verifed Users------------
+http://localhost:8081/api/users/register-verified-email
+request : if passed otp is expired
 
+{
+    "name":"Mamatha R",
+    "email":"mamathapudukutapu@gmail.com",
+    "password":"Mammu143",
+    "otp":"312057"
 
+}
+
+response {
+
+ "message": "Otp passed is expired , please generate new opt and try to register",
+    "errorCode": "400",
+    "timestamp": "2025-01-28T11:28:33.1472659"
+}
+if  in-valid otp is passed 
+response{
+
+    "message": "Failed to verify the email otp",
+    "errorCode": "400",
+    "timestamp": "2025-01-28T11:31:01.1479115"
+
+}
+if all are correct 
+response{
+sucessfully registered the user with Id9
+}
 
 
 

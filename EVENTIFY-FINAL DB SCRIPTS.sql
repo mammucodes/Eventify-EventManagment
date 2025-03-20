@@ -22,6 +22,7 @@ CREATE TABLE event_tickets(id INT auto_increment primary key, available_tickets 
  event_id BIGINT not null , 
     CONSTRAINT fk_events_ticekts FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE);
     
+    
     -- -------- CREATE USER  TICKET  DETAILS TABLE----------
 create table user_tickets_details(id int auto_increment primary key,
 event_id  bigint,
@@ -62,6 +63,10 @@ DROP COLUMN payment_intent_number;
 create table email_otp_verification(id int  auto_increment primary key ,email varchar(200)not null, otp varchar(50) not null,
 otp_created_on datetime not null);
 select * from email_otp_verification;
+
+select * from payment_status_options;
+select * from user_tickets_details where  id = 11;-- ticket_booked_time<=NOW() - INTERVAL 500 MINUTE;
+
 
 
  

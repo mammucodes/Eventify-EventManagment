@@ -21,6 +21,8 @@ WHERE e.city = 'Dallas'
 
 -- *******EVENT TICKET DETAILS SELECT Queries**********---
 select * from event_tickets;
+select * from users;
+select * from user_tickets_details;
 
 
 -- ----******USER TICKET DETAILS select Queries***********----------
